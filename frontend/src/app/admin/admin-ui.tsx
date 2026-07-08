@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { findScreen, modules, sampleRows, workflowSteps, type IconName, type ModuleDefinition, type ScreenDefinition } from "./admin-data";
 
-const adminStyles = `
+export const adminStyles = `
 .ems-shell{--ems-sidebar:286px;background:#eef3f8;color:#172033;display:grid;grid-template-columns:var(--ems-sidebar) minmax(0,1fr);height:100dvh;inset:0;max-height:100dvh;overflow:hidden;position:fixed;width:100vw;font-family:var(--font-inter),Arial,sans-serif}
 .ems-shell.sidebar-collapsed{--ems-sidebar:86px}
 .ems-shell *{box-sizing:border-box}.ems-shell a{color:inherit;text-decoration:none}.ems-shell button,.ems-shell input{font:inherit}body:has(.ems-shell){margin:0;overflow:hidden}
@@ -13,24 +14,24 @@ const adminStyles = `
 .ems-brand{align-items:center;background:#fff;border-radius:8px;display:flex;justify-content:center;min-height:76px;padding:8px}.ems-brand img{height:auto;max-height:66px;object-fit:contain;width:172px}
 .ems-shell.sidebar-collapsed .ems-brand img{width:58px}.ems-shell.sidebar-collapsed .ems-nav-link span{display:none}.ems-shell.sidebar-collapsed .ems-nav-link{justify-content:center;padding:0}
 .ems-nav{display:grid;gap:3px;margin-top:14px;min-height:0;overflow:auto;padding-right:3px}.ems-nav-link{align-items:center;border-radius:8px;color:#dce8f6;display:flex;font-size:14px;font-weight:700;gap:10px;min-height:38px;padding:0 12px}.ems-nav-link:hover,.ems-nav-link.active{background:#1e63b8;color:#fff}.ems-nav-link.logout{border-top:1px solid rgba(255,255,255,.12);color:#f7c9c9;margin-top:12px;padding-top:12px}
-.ems-workspace{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0;min-width:0;overflow:hidden}.ems-topbar{align-items:center;background:#fff;border-bottom:1px solid #dce5ef;display:grid;gap:16px;grid-template-columns:auto minmax(260px,1fr) auto;min-height:74px;min-width:0;padding:10px 20px}
+.ems-workspace{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0;min-width:0;overflow:hidden}.ems-topbar{align-items:center;background:#fff;border-bottom:1px solid #dce5ef;display:grid;gap:16px;grid-template-columns:auto minmax(260px,1fr) auto;min-height:74px;min-width:0;padding:10px 20px}.ems-user-section{align-items:center;display:flex;flex-direction:column;gap:4px}
 .ems-title,.ems-actions,.ems-search,.panel-heading,.panel-action,.quick-add,.icon-button,.ems-user,.command-chip,.screen-toolbar,.filter-bar{align-items:center;display:flex}.ems-title{gap:12px;min-width:220px}.ems-title p,.panel-heading p,.screen-kicker{color:#64748b;font-size:12px;font-weight:800;letter-spacing:0;margin:0 0 3px;text-transform:uppercase}.ems-title h1,.panel-heading h2{color:#10243d;font-size:21px;line-height:1.15;margin:0}
-.breadcrumb{color:#64748b;font-size:12px;font-weight:800;margin-top:4px}.breadcrumb a{text-decoration:underline;text-underline-offset:3px}.ems-search{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#64748b;gap:10px;min-height:42px;padding:0 12px}.ems-search input{background:transparent;border:0;color:#172033;min-width:0;outline:0;width:100%}.ems-search kbd{background:#fff;border:1px solid #dce5ef;border-radius:6px;color:#64748b;font-size:11px;font-weight:800;padding:4px 7px;white-space:nowrap}
-.ems-actions{flex-wrap:wrap;gap:8px;justify-content:flex-end}.quick-add,.panel-action,.command-chip,.icon-button,.ems-user,.toolbar-button{border:1px solid #dce5ef;border-radius:8px;color:#172033;font-weight:800}.quick-add,.panel-action,.command-chip,.toolbar-button{background:#fff;gap:7px;min-height:38px;padding:0 12px}.quick-add,.toolbar-button.primary{background:#1e63b8;border-color:#1e63b8;color:#fff}.icon-button{background:#fff;height:38px;justify-content:center;width:38px}.ems-user{background:#f7fafc;gap:7px;min-height:38px;padding:0 11px}
+.breadcrumb{color:#64748b;font-size:12px;font-weight:800;margin-top:4px}.breadcrumb a{text-decoration:underline;text-underline-offset:3px}.ems-search{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#64748b;gap:10px;min-height:42px;padding:0 12px}.ems-search input{background:transparent;border:0;color:#172033;min-width:0;outline:0;width:100%}.ems-search kbd{background:#fff;border:1px solid #dce5ef;border-radius:6px;color:#64748b;font-size:11px;font-weight:800;padding:4px 7px;white-space:nowrap}.search-logo{background:linear-gradient(135deg,#1e63b8 0%,#2563eb 100%);border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;height:28px;width:28px}
+.ems-actions{flex-wrap:wrap;gap:8px;justify-content:flex-end}.quick-add,.panel-action,.command-chip,.icon-button,.ems-user,.toolbar-button{border:1px solid #dce5ef;border-radius:8px;color:#172033;font-weight:800;transition:all 0.2s ease;cursor:pointer}.quick-add,.panel-action,.command-chip,.toolbar-button{background:#fff;gap:7px;min-height:38px;padding:0 12px}.quick-add:hover,.toolbar-button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,99,184,0.2)}.quick-add,.toolbar-button.primary{background:linear-gradient(135deg,#1e63b8 0%,#2563eb 100%);border-color:#1e63b8;color:#fff;box-shadow:0 2px 8px rgba(30,99,184,0.3)}.quick-add:hover,.toolbar-button.primary:hover{background:linear-gradient(135deg,#1e63b8 0%,#3b82f6 100%);box-shadow:0 4px 16px rgba(30,99,184,0.4)}.icon-button{background:#fff;height:38px;justify-content:center;width:38px}.icon-button:hover{background:#f7fafc;transform:scale(1.05)}.ems-user{background:#f7fafc;gap:7px;min-height:38px;padding:0 11px}
 .badge{border-radius:999px;font-size:12px;font-weight:800;padding:7px 10px;white-space:nowrap}.badge-blue{background:#dbeafe;color:#1e63b8}.badge-green{background:#dcfce7;color:#15805b}.badge-amber{background:#fff4cc;color:#9a6a00}.badge-red{background:#ffe4e4;color:#d94d4d}
 .ems-content{align-content:start;display:grid;gap:16px;min-height:0;overflow-x:hidden;overflow-y:auto;padding:18px 20px 36px;scrollbar-gutter:stable}.command-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.command-chip{color:#31516f;flex:0 0 auto;font-size:13px}
 .notice{align-items:center;background:#eaf4ff;border:1px solid #b8d7f8;border-radius:8px;color:#164982;display:flex;font-size:13px;font-weight:800;gap:10px;justify-content:space-between;padding:10px 12px}.notice button{background:transparent;border:0;color:#164982;font-weight:900}
 .ops-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.ops-card,.ems-panel,.cms-tile,.queue-card,.pipeline-item,.activity-item,.screen-card,.form-card{background:#fff;border:1px solid #dce5ef;border-radius:8px}.ops-card{border-left:4px solid #1e63b8;min-height:122px;padding:16px}.ops-card span,.cms-tile span,.queue-card span,.pipeline-item span,.activity-item span,.screen-card span{color:#64748b;display:block;font-size:13px;line-height:1.35}.ops-card strong{color:#10243d;display:block;font-size:32px;line-height:1;margin:14px 0 8px}.ops-card p,.queue-card p,.pipeline-item p,.activity-item p,.screen-card p{color:#64748b;font-size:13px;line-height:1.45;margin:0}.accent-amber{border-left-color:#d89100}.accent-red{border-left-color:#d94d4d}.accent-green{border-left-color:#19a56f}
-.ems-grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}.ems-grid.two-column{grid-template-columns:minmax(0,1.55fr) minmax(300px,.75fr)}.ems-panel,.screen-card,.form-card{min-width:0;padding:18px}.panel-heading{gap:14px;justify-content:space-between;margin-bottom:16px}.panel-heading.compact{align-items:flex-start}
+.ems-grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}.ems-grid.two-column{grid-template-columns:minmax(0,1.55fr) minmax(300px,.75fr)}.ems-panel,.screen-card,.form-card{min-width:0;padding:18px}.panel-heading{gap:14px;justify-content:space-between;margin-bottom:16px}.panel-heading.compact{align-items:flex-start}.panel-actions{align-items:center;display:flex;gap:12px}.table-search{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#172033;min-height:40px;padding:0 12px;min-width:200px}.modern-table{border-collapse:collapse;width:100%}.modern-table th{background:#f7fafc;color:#31516f;font-size:12px;font-weight:800;text-align:left;text-transform:uppercase;padding:14px 16px}.modern-table td{border-bottom:1px solid #dce5ef;color:#31516f;font-size:14px;padding:14px 16px}.modern-table tr:hover{background:#f7fafc}.employee-id{background:#dbeafe;color:#1e63b8;font-size:11px;font-weight:900;padding:4px 8px;border-radius:4px}.employee-cell{display:flex;flex-direction:column;gap:2px}.employee-cell small{color:#64748b;font-size:12px}.loading-state{color:#64748b;font-size:14px;padding:40px;text-align:center}.empty-state{color:#64748b;font-size:14px;padding:40px;text-align:center;font-style:italic}.action-btn{background:transparent;border:1px solid #dce5ef;border-radius:6px;color:#1e63b8;font-weight:800;padding:6px 12px;transition:all 0.2s ease}.action-btn:hover{background:#dbeafe;border-color:#1e63b8}.action-btn.edit{color:#d89100;border-color:#fcd34d}.action-btn.edit:hover{background:#fef3c7;border-color:#d89100}.modern-form{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:24px}.form-section{margin-bottom:24px}.form-section h3{color:#10243d;font-size:16px;font-weight:800;margin:0 0 16px;padding-bottom:8px;border-bottom:1px solid #dce5ef}
 .screen-hero{background:#fff;border:1px solid #dce5ef;border-radius:8px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) auto;padding:20px}.screen-hero h2{color:#10243d;font-size:26px;margin:0 0 8px}.screen-hero p{color:#64748b;line-height:1.55;margin:0;max-width:900px}.screen-toolbar{flex-wrap:wrap;gap:8px;justify-content:flex-end}.filter-bar{background:#fff;border:1px solid #dce5ef;border-radius:8px;flex-wrap:wrap;gap:10px;padding:12px}.filter-bar input,.filter-bar select,.form-card input,.form-card select,.form-card textarea{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#172033;min-height:40px;padding:0 12px}.filter-bar input{flex:1 1 260px}.filter-bar select{flex:0 1 180px}.form-grid{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr))}.form-card label{color:#31516f;display:grid;font-size:13px;font-weight:800;gap:7px}.form-card textarea{min-height:110px;padding:12px;resize:vertical}.span-two{grid-column:1/-1}
 .cms-grid,.screen-grid{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}.cms-tile,.screen-tile{align-items:center;display:grid;gap:10px;grid-template-columns:auto minmax(0,1fr) auto;min-height:72px;padding:12px}.cms-tile strong,.pipeline-item strong,.activity-item strong,.screen-card strong{color:#10243d;display:block;font-size:14px}.screen-tile{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px}
 .queue-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.queue-card{min-height:120px;padding:14px}.queue-card strong{color:#1e63b8;display:block;font-size:30px;line-height:1;margin-bottom:16px}.pipeline-stack,.activity-list{display:grid;gap:10px}.pipeline-item{border-left:4px solid #1e63b8;padding:12px}.activity-item{padding:12px}.activity-item span{font-size:12px;font-weight:800}
 .table-scroll{overflow-x:auto}.ems-table{border-collapse:collapse;min-width:760px;width:100%}.ems-table th{background:#f7fafc;color:#31516f;font-size:12px;text-align:left;text-transform:uppercase}.ems-table th,.ems-table td{border-bottom:1px solid #dce5ef;padding:13px 12px}.ems-table td{color:#31516f;font-size:14px}.row-actions{display:flex;gap:8px}.row-actions button{background:transparent;border:0;color:#1e63b8;font-weight:800;padding:0}
 .workflow-strip{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}.workflow-step{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;padding:12px}.workflow-step strong{color:#10243d;display:block;font-size:14px}.workflow-step.active{background:#dbeafe;border-color:#1e63b8}.module-list{display:grid;gap:8px}.module-list a{align-items:center;background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#31516f;display:flex;font-size:13px;font-weight:800;gap:8px;min-height:38px;padding:0 10px}.module-list a.active{background:#dbeafe;border-color:#1e63b8;color:#1e63b8}
-.dashboard-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1.4fr) minmax(320px,.75fr)}.summary-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.summary-card{background:#fff;border:1px solid #dce5ef;border-left:4px solid #1e63b8;border-radius:8px;padding:16px}.summary-card strong{color:#10243d;display:block;font-size:30px;line-height:1;margin:8px 0}.summary-card span,.permission-note,.stock-alert p,.pipeline-row span,.inbox-row p{color:#64748b;font-size:13px;line-height:1.4;margin:0}.permission-list{display:flex;flex-wrap:wrap;gap:8px}.permission-pill{background:#dbeafe;border:1px solid #b8d7f8;border-radius:999px;color:#1e63b8;font-size:12px;font-weight:900;padding:7px 10px}.stock-list,.pipeline-list,.inbox-list{display:grid;gap:10px}.stock-alert,.pipeline-row,.inbox-row{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:12px}.stock-alert{border-left:4px solid #d94d4d}.pipeline-row,.inbox-row{align-items:center;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto}.pipeline-row strong,.inbox-row strong,.stock-alert strong{color:#10243d;display:block;font-size:14px}.inbox-row{color:inherit;text-decoration:none}.inbox-row.resolved{background:#f7fafc;opacity:.78}.inbox-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.audit-note{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#64748b;font-size:13px;line-height:1.5;padding:12px}
+.dashboard-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1.4fr) minmax(320px,.75fr)}.summary-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.summary-card{background:#fff;border:1px solid #dce5ef;border-left:4px solid #1e63b8;border-radius:8px;padding:16px;cursor:pointer;transition:all 0.2s ease;display:grid;gap:12px;grid-template-columns:auto minmax(0,1fr)}.summary-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(30,99,184,0.15)}.card-icon{background:#f7fafc;border-radius:8px;display:flex;align-items:center;justify-content:center;height:48px;width:48px;color:#1e63b8}.card-content{display:flex;flex-direction:column}.summary-card strong{color:#10243d;display:block;font-size:30px;line-height:1;margin:8px 0}.summary-card span,.permission-note,.stock-alert p,.pipeline-row span,.inbox-row p{color:#64748b;font-size:13px;line-height:1.4;margin:0}.permission-list{display:flex;flex-wrap:wrap;gap:8px}.permission-pill{background:#dbeafe;border:1px solid #b8d7f8;border-radius:999px;color:#1e63b8;font-size:12px;font-weight:900;padding:7px 10px}.stock-list,.pipeline-list,.inbox-list{display:grid;gap:10px}.stock-alert,.pipeline-row,.inbox-row{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:12px}.stock-alert{border-left:4px solid #d94d4d}.pipeline-row,.inbox-row{align-items:center;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto}.pipeline-row strong,.inbox-row strong,.stock-alert strong{color:#10243d;display:block;font-size:14px}.inbox-row{color:inherit;text-decoration:none}.inbox-row.resolved{background:#f7fafc;opacity:.78}.inbox-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.audit-note{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#64748b;font-size:13px;line-height:1.5;padding:12px}
 .crm-board{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(220px,1fr));overflow-x:auto;padding-bottom:4px}.crm-column{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;min-width:220px;padding:12px}.crm-column.drag-over{background:#eaf4ff;border-color:#1e63b8}.crm-column h3{align-items:center;color:#10243d;display:flex;font-size:14px;justify-content:space-between;margin:0 0 12px}.lead-card{background:#fff;border:1px solid #dce5ef;border-left:4px solid #1e63b8;border-radius:8px;color:inherit;cursor:grab;display:block;margin-bottom:10px;padding:12px;text-align:left;text-decoration:none;width:100%}.lead-card:active{cursor:grabbing}.lead-card strong{color:#10243d;display:block;font-size:14px}.lead-card p,.lead-profile p,.history-item p,.quote-card p,.attachment-card p{color:#64748b;font-size:13px;line-height:1.4;margin:5px 0 0}.lead-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.lead-detail-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr)}.lead-profile{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:18px}.profile-grid{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:14px}.profile-cell{background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;padding:10px}.profile-cell span{color:#64748b;display:block;font-size:12px;font-weight:800;text-transform:uppercase}.profile-cell strong{color:#10243d;display:block;font-size:14px;margin-top:4px}.history-list,.quote-list,.attachment-list{display:grid;gap:10px}.history-item,.quote-card,.attachment-card{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:12px}.history-item{border-left:4px solid #1e63b8}.quote-card{align-items:center;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto}.archive-card{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:14px}.archive-card.archived{border-left:4px solid #d94d4d}.archive-card.active{border-left:4px solid #19a56f}
 .quote-tabs{display:flex;gap:8px;overflow-x:auto}.quote-tab{background:#fff;border:1px solid #dce5ef;border-radius:8px;color:#31516f;flex:0 0 auto;font-size:13px;font-weight:900;min-height:38px;padding:0 12px}.quote-tab.active{background:#1e63b8;border-color:#1e63b8;color:#fff}.quote-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr)}.pdf-preview{background:#fff;border:1px solid #dce5ef;border-radius:8px;min-height:560px;padding:24px}.pdf-page{background:#fff;border:1px solid #cfd8e3;border-radius:4px;box-shadow:0 18px 40px rgba(16,36,61,.12);margin:0 auto;max-width:420px;min-height:520px;padding:26px}.pdf-page h3{color:#10243d;font-size:20px;margin:0 0 16px}.pdf-line{border-bottom:1px solid #dce5ef;display:flex;justify-content:space-between;padding:10px 0}.delivery-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.delivery-card{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:14px}.template-row{align-items:center;background:#fff;border:1px solid #dce5ef;border-radius:8px;display:grid;gap:10px;grid-template-columns:minmax(0,1fr) auto;padding:12px}.lead-selector{display:grid;gap:10px}.lead-selector .lead-card{cursor:pointer}.sync-note{background:#eaf4ff;border:1px solid #b8d7f8;border-radius:8px;color:#164982;font-size:13px;font-weight:800;line-height:1.45;padding:12px}
-.inventory-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr)}.stock-alert-grid{display:grid;gap:10px}.stock-alert-card{background:#fff;border:1px solid #dce5ef;border-left:5px solid #d94d4d;border-radius:8px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto;padding:14px}.stock-alert-card.warning{border-left-color:#d89100}.stock-alert-card strong,.supplier-card strong,.purchase-row strong{color:#10243d;display:block;font-size:14px}.stock-alert-card p,.supplier-card p,.purchase-row p,.request-summary p{color:#64748b;font-size:13px;line-height:1.45;margin:5px 0 0}.stock-meter{background:#f7fafc;border:1px solid #dce5ef;border-radius:999px;height:10px;margin-top:10px;overflow:hidden}.stock-meter span{background:#d94d4d;display:block;height:100%}.stock-meter.warning span{background:#d89100}.supplier-card{background:#fff;border:1px solid #dce5ef;border-radius:8px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto;padding:14px}.supplier-card.active{border-color:#1e63b8;box-shadow:0 0 0 2px #dbeafe}.supplier-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.request-summary{background:#10243d;border-radius:8px;color:#eff6ff;padding:16px}.request-summary h3{font-size:18px;margin:0 0 12px}.request-summary p{color:#dce8f6}.request-items{display:grid;gap:8px;margin:12px 0}.request-item{align-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:8px;display:flex;gap:8px;justify-content:space-between;padding:10px}.purchase-row{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:12px}.inventory-tab-panel{display:grid;gap:16px}
+.inventory-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr)}.stock-alert-grid{display:grid;gap:10px}.stock-alert-card{background:#fff;border:1px solid #dce5ef;border-left:5px solid #d94d4d;border-radius:8px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto;padding:14px}.stock-alert-card.warning{border-left-color:#d89100}.stock-alert-card strong,.supplier-card strong,.purchase-row strong{color:#10243d;display:block;font-size:14px}.stock-alert-card p,.supplier-card p,.purchase-row p,.request-summary p{color:#64748b;font-size:13px;line-height:1.45;margin:5px 0 0}.stock-meter{background:#f7fafc;border:1px solid #dce5ef;border-radius:999px;height:10px;margin-top:10px;overflow:hidden}.stock-meter span{background:#d94d4d;display:block;height:100%}.stock-meter.warning span{background:#d89100}.supplier-card{background:#fff;border:1px solid #dce5ef;border-radius:8px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr) auto;padding:14px}.supplier-card.active{border-color:#1e63b8;box-shadow:0 0 0 2px #dbeafe}.supplier-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.request-summary{background:#10243d;border-radius:8px;color:#eff6ff;padding:16px}.request-summary h3{font-size:18px;margin:0 0 12px}.request-summary p{color:#dce8f6}.request-items{display:grid;gap:8px;margin:12px 0}.request-item{align-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:8px;display:flex;gap:8px;justify-content:space-between;padding:10px}.purchase-row{background:#fff;border:1px solid #dce5ef;border-radius:8px;padding:12px}.inventory-tab-panel{display:grid;gap:16px;overflow-y:auto;max-height:calc(100dvh - 140px);padding-right:4px}
 .ems-footer{align-items:center;background:#fff;border-top:1px solid #dce5ef;color:#64748b;display:flex;font-size:12px;font-weight:700;gap:16px;justify-content:space-between;min-height:44px;min-width:0;padding:8px 20px}.ems-footer span:last-child{align-items:center;display:flex;gap:6px}
 @media(max-width:1180px){.ems-shell{grid-template-columns:86px minmax(0,1fr)}.ems-brand img{width:58px}.ems-nav-link span,.ems-nav-link.logout span{display:none}.ems-nav-link{justify-content:center;padding:0}.ems-grid,.ems-grid.two-column,.screen-hero{grid-template-columns:1fr}}
 @media(max-width:860px){body:has(.ems-shell){overflow:auto}.ems-shell{display:block;height:auto;max-height:none;min-height:100dvh;overflow:visible;position:static;width:100%}.ems-sidebar{max-height:none;overflow:visible}.ems-nav{grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}.ems-workspace{display:block}.ems-topbar{grid-template-columns:1fr;min-height:auto;padding:14px}.ems-actions,.screen-toolbar{justify-content:flex-start}.ems-content{overflow:visible;padding:14px}.ops-grid,.cms-grid,.queue-grid,.screen-grid,.form-grid,.dashboard-layout,.lead-detail-layout,.profile-grid,.quote-layout,.inventory-layout{grid-template-columns:1fr}.stock-alert-card,.supplier-card{grid-template-columns:1fr}.cms-tile{grid-template-columns:auto minmax(0,1fr)}.cms-tile .badge{grid-column:2;justify-self:start}.ems-footer{align-items:flex-start;flex-direction:column;gap:8px;padding:12px 14px}}
@@ -135,29 +136,45 @@ function Topbar({
   onToggleSidebar: () => void;
 }) {
   const context = topbarContext(module);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const now = new Date();
+    setCurrentDate(now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAction("Global search submitted.");
+  };
+
+  const handleProfile = () => {
+    router.push('/admin/users');
+  };
 
   return (
     <header className="ems-topbar">
       <div className="ems-title">
         <button className="icon-button" aria-label="Toggle navigation" onClick={onToggleSidebar} type="button"><Icon name="panel" size={19} /></button>
         <div>
-          <p>Spencer EWSMS</p>
+          <p>Spencer WS Ltd</p>
           <h1>{screen.title}</h1>
-          <div className="breadcrumb"><Link href="/admin">Dashboard</Link> / {module.title}</div>
+          <div className="breadcrumb">{module.title}</div>
         </div>
       </div>
-      <form className="ems-search" role="search" onSubmit={(event) => { event.preventDefault(); onAction("Global search submitted."); }}>
-        <Icon name="search" size={18} />
-        <input aria-label="Global search" placeholder={context.searchPlaceholder} />
-        <kbd>Ctrl K</kbd>
-      </form>
       <div className="ems-actions">
-        <button className="quick-add" onClick={() => onAction(context.addMessage)} type="button"><Icon name="plus" size={17} /><span>{context.addLabel}</span></button>
         <Link className="icon-button" aria-label="Notifications" href="/admin/unified-inbox"><Icon name="bell" size={18} /></Link>
-        <button className="icon-button" aria-label="Messages" onClick={() => onAction(context.messagesMessage)} type="button"><Icon name="mail" size={18} /></button>
-        <button className="icon-button" aria-label="Tasks" onClick={() => onAction(context.tasksMessage)} type="button"><Icon name="check" size={18} /></button>
-        <button className="ems-user" onClick={() => onAction(context.profileMessage)} type="button"><Icon name="user" size={17} /><span>Admin</span></button>
-        <Badge label="Jul 7, 2026" />
+        <form className="ems-search" role="search" onSubmit={handleSearch}>
+          <div className="search-logo">SW</div>
+          <input aria-label="Global search" placeholder={context.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Icon name="search" size={18} />
+        </form>
+      </div>
+      <div className="ems-user-section">
+        <Badge label={currentDate} />
+        <button className="ems-user" onClick={handleProfile} type="button"><Icon name="user" size={17} /><span>Admin</span></button>
       </div>
     </header>
   );
@@ -513,7 +530,6 @@ function QuotationManagementScreen({ onAction }: { onAction: (message: string) =
         <div>
           <p className="screen-kicker">Quotation Management</p>
           <h2>Quotations & Leads</h2>
-          <p>One primary workspace for quotation lifecycle tracking, templates, generation, delivery, supporting documents, and lead management nested inside the same screen.</p>
         </div>
         <div className="screen-toolbar">
           <button className="toolbar-button primary" onClick={() => setActiveTab("Generate + Preview")} type="button"><Icon name="plus" size={15} /> Generate Quotation</button>
@@ -776,7 +792,6 @@ function InventoryManagementScreen({ onAction }: { onAction: (message: string) =
         <div>
           <p className="screen-kicker">Inventory Management</p>
           <h2>Stock Control With Supplier Reorder Workflow</h2>
-          <p>Low-stock items trigger red alerts, the in-charge verifies the stock position, checks saved suppliers and previous purchase records, then sends a multi-item supplier quotation request from this same workspace.</p>
         </div>
         <div className="screen-toolbar">
           <button className="toolbar-button" onClick={() => onAction("Inventory stock levels refreshed from database.")} type="button"><Icon name="package" size={15} /> Refresh Stock</button>
@@ -918,108 +933,189 @@ function InventoryManagementScreen({ onAction }: { onAction: (message: string) =
 
 function UserManagementScreen({ onAction }: { onAction: (message: string) => void }) {
   const [selectedRole, setSelectedRole] = useState("Administrator");
+  const [users, setUsers] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    role: 'Administrator',
+    is_active: true,
+  });
+  const API_BASE = "http://127.0.0.1:8000/api/users";
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/`);
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+        setFilteredUsers(data);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (!query) {
+      setFilteredUsers(users);
+      return;
+    }
+    const lowerQuery = query.toLowerCase();
+    const filtered = users.filter((user) =>
+      user.username?.toLowerCase().includes(lowerQuery) ||
+      user.email?.toLowerCase().includes(lowerQuery) ||
+      user.first_name?.toLowerCase().includes(lowerQuery) ||
+      user.last_name?.toLowerCase().includes(lowerQuery) ||
+      user.role?.toLowerCase().includes(lowerQuery)
+    );
+    setFilteredUsers(filtered);
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_BASE}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        onAction("User created successfully");
+        fetchUsers();
+        setFormData({ username: '', email: '', first_name: '', last_name: '', phone: '', role: 'Administrator', is_active: true });
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      onAction("Failed to create user");
+    }
+  };
 
   return (
     <div className="inventory-tab-panel">
       <section className="screen-hero">
         <div>
-          <p className="screen-kicker">Users / User Management Component</p>
-          <h2>Users</h2>
-          <p>Administrators create user accounts and assign each person to one of three classes: Administrator, Technician, or Human Resource. Screen access is enforced from that class, so users only see what they are authorized to use.</p>
+          <p className="screen-kicker">User Management</p>
+          <h2>System Users</h2>
         </div>
         <div className="screen-toolbar">
-          <button className="toolbar-button" onClick={() => onAction("User activity export prepared.")} type="button">Export Activity</button>
+          <button className="toolbar-button" onClick={() => onAction("User activity export prepared.")} type="button"><Icon name="file" size={15} /> Export</button>
           <button className="toolbar-button primary" onClick={() => onAction("Create account form focused.")} type="button"><Icon name="plus" size={15} /> New User</button>
         </div>
       </section>
 
       <section className="summary-grid" aria-label="User management summary">
-        <article className="summary-card"><span>Total Users</span><strong>4</strong><p>Across administrator, technician, and HR classes.</p></article>
-        <article className="summary-card"><span>Active Accounts</span><strong>2</strong><p>Can access assigned dashboard screens.</p></article>
-        <article className="summary-card accent-amber"><span>MFA Pending</span><strong>1</strong><p>Must finish verification before full access.</p></article>
-        <article className="summary-card accent-red"><span>Locked</span><strong>1</strong><p>Requires administrator unlock or password reset.</p></article>
+        <article className="summary-card clickable">
+          <div className="card-icon"><Icon name="users" size={24} /></div>
+          <div className="card-content"><span>Total Users</span><strong>{users.length}</strong></div>
+        </article>
+        <article className="summary-card clickable">
+          <div className="card-icon"><Icon name="user" size={24} /></div>
+          <div className="card-content"><span>Active Accounts</span><strong>{users.filter(u => u.is_active).length}</strong></div>
+        </article>
+        <article className="summary-card accent-amber clickable">
+          <div className="card-icon"><Icon name="shield" size={24} /></div>
+          <div className="card-content"><span>Administrators</span><strong>{users.filter(u => u.role === 'Administrator').length}</strong></div>
+        </article>
+        <article className="summary-card accent-red clickable">
+          <div className="card-icon"><Icon name="logout" size={24} /></div>
+          <div className="card-content"><span>Inactive</span><strong>{users.filter(u => !u.is_active).length}</strong></div>
+        </article>
       </section>
 
       <section className="inventory-layout">
         <article className="ems-panel">
-          <div className="panel-heading"><div><p>Accounts</p><h2>Saved Users</h2></div><Badge label="RBAC enforced" /></div>
-          <div className="table-scroll">
-            <table className="ems-table">
-              <thead><tr><th>User</th><th>Class</th><th>Status</th><th>Access</th><th>Last Seen</th><th>Actions</th></tr></thead>
-              <tbody>
-                {userAccounts.map((user) => (
-                  <tr key={user.email}>
-                    <td><strong>{user.name}</strong><br /><span>{user.email}</span></td>
-                    <td>{user.role}</td>
-                    <td><Badge label={user.status} /></td>
-                    <td>{user.access}</td>
-                    <td>{user.lastSeen}</td>
-                    <td>
-                      <div className="row-actions">
-                        <button onClick={() => onAction(`${user.name} profile opened.`)} type="button">View</button>
-                        <button onClick={() => onAction(`${user.name} role editor opened.`)} type="button">Role</button>
-                        <button onClick={() => onAction(`${user.name} password reset prepared.`)} type="button">Reset</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="panel-heading">
+            <div><p>Accounts</p><h2>Saved Users</h2></div>
+            <div className="panel-actions">
+              <input 
+                className="table-search" 
+                placeholder="Search users..." 
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+              <Badge label={`${filteredUsers.length} users`} />
+            </div>
           </div>
+          {loading ? <div className="loading-state">Loading user data...</div> : (
+            <div className="table-scroll">
+              <table className="ems-table modern-table">
+                <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {filteredUsers.length === 0 ? (
+                    <tr><td colSpan={5} className="empty-state">No users found matching your search.</td></tr>
+                  ) : filteredUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td>
+                        <div className="employee-cell">
+                          <strong>{user.first_name} {user.last_name}</strong>
+                          <small>{user.email}</small>
+                        </div>
+                      </td>
+                      <td><span className="employee-id">@{user.username}</span></td>
+                      <td>{user.role}</td>
+                      <td><Badge label={user.is_active ? 'Active' : 'Inactive'} /></td>
+                      <td>
+                        <div className="row-actions">
+                          <button onClick={() => onAction(`${user.username} profile opened.`)} type="button" className="action-btn view">View</button>
+                          <button onClick={() => onAction(`${user.username} role editor opened.`)} type="button" className="action-btn edit">Edit</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </article>
 
-        <form className="form-card" onSubmit={(event) => { event.preventDefault(); onAction(`${selectedRole} account invitation created.`); }}>
-          <div className="panel-heading"><div><p>Create Account</p><h2>New User</h2></div><Badge label={selectedRole} /></div>
-          <div className="form-grid">
-            <label>Full Name<input placeholder="Jane Akello" /></label>
-            <label>Email<input placeholder="jane@spencerwater.co.ug" type="email" /></label>
-            <label>Phone<input placeholder="+256..." /></label>
-            <label>User Class<select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}><option>Administrator</option><option>Technician</option><option>Human Resource</option></select></label>
-            <label>Temporary Password<input placeholder="Auto generated on backend" /></label>
-            <label>Account Status<select><option>Invite Pending</option><option>Active</option><option>Suspended</option></select></label>
-            <label className="span-two">Access Note<textarea value={roleMatrix.find(([role]) => role === selectedRole)?.[1] ?? ""} readOnly /></label>
-            <label><input defaultChecked={selectedRole === "Administrator" || selectedRole === "Human Resource"} type="checkbox" /> Employee Management</label>
-            <label><input defaultChecked={selectedRole === "Administrator"} type="checkbox" /> Inventory Management</label>
+        <form className="form-card modern-form" onSubmit={handleCreateUser}>
+          <div className="panel-heading"><div><p>Create Account</p><h2>New User</h2></div><Badge label="Draft" /></div>
+          
+          <div className="form-section">
+            <h3>Personal Information</h3>
+            <div className="form-grid">
+              <label>Username<input value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} placeholder="janeakello" /></label>
+              <label>Email<input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} type="email" placeholder="jane@spencerwater.co.ug" /></label>
+              <label>First Name<input value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} placeholder="Jane" /></label>
+              <label>Last Name<input value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} placeholder="Akello" /></label>
+              <label>Phone<input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+256 700 000 000" /></label>
+            </div>
           </div>
-          <div className="screen-toolbar" style={{ marginTop: 16, justifyContent: "flex-start" }}>
-            <button className="toolbar-button" onClick={() => onAction("User invitation draft saved.")} type="button">Save Draft</button>
+
+          <div className="form-section">
+            <h3>Account Settings</h3>
+            <div className="form-grid">
+              <label>Role<select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
+                <option value="Administrator">Administrator</option>
+                <option value="Technician">Technician</option>
+                <option value="Human Resource">Human Resource</option>
+              </select></label>
+              <label>Status<select value={formData.is_active ? 'Active' : 'Inactive'} onChange={(e) => setFormData({...formData, is_active: e.target.value === 'Active'})}>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select></label>
+            </div>
+          </div>
+
+          <div className="screen-toolbar" style={{ marginTop: 24, justifyContent: "flex-start" }}>
+            <button className="toolbar-button" onClick={() => setFormData({ username: '', email: '', first_name: '', last_name: '', phone: '', role: 'Administrator', is_active: true })} type="button">Cancel</button>
             <button className="toolbar-button primary" type="submit">Create Account</button>
           </div>
         </form>
       </section>
-
-      <section className="ems-grid">
-        <article className="ems-panel">
-          <div className="panel-heading"><div><p>Permission Matrix</p><h2>User Classes</h2></div><Icon name="shield" size={18} /></div>
-          <div className="activity-list">
-            {roleMatrix.map(([role, access]) => (
-              <div className="activity-item" key={role}>
-                <span>{role}</span>
-                <strong>{access}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="ems-panel">
-          <div className="panel-heading"><div><p>Role Dashboard Preview</p><h2>Personalized Login Experience</h2></div><Badge label={selectedRole} /></div>
-          <div className="activity-list">
-            <div className="activity-item"><span>Dashboard Heading</span><strong>{selectedRole} Dashboard</strong><p>The admin shell stays uniform, but the heading and visible widgets follow the assigned user class.</p></div>
-            <div className="activity-item"><span>Visible Components</span><strong>{roleMatrix.find(([role]) => role === selectedRole)?.[1]}</strong></div>
-            <div className="activity-item"><span>Navigation</span><strong>Unauthorized screens hidden</strong><p>Human Resource users are created here and do not require a separate HR top-level screen.</p></div>
-          </div>
-        </article>
-      </section>
-
-      <article className="ems-panel">
-        <div className="panel-heading"><div><p>Security Controls</p><h2>Account Enforcement</h2></div><Badge label="Admin only" /></div>
-        <div className="screen-toolbar" style={{ justifyContent: "flex-start" }}>
-          <button className="toolbar-button" onClick={() => onAction("Locked account queue opened.")} type="button">Review Locked</button>
-          <button className="toolbar-button" onClick={() => onAction("MFA retry policy opened in Settings.")} type="button">MFA Policy</button>
-          <button className="toolbar-button" onClick={() => onAction("Role audit trail opened.")} type="button">Role Audit</button>
-        </div>
-        <p className="permission-note" style={{ marginTop: 14 }}>Users cannot grant themselves access. Role changes are administrator actions and should be written to the audit log once the backend is connected.</p>
-      </article>
     </div>
   );
 }
@@ -1034,7 +1130,6 @@ function ContentManagementScreen({ onAction }: { onAction: (message: string) => 
         <div>
           <p className="screen-kicker">Content Management</p>
           <h2>Website Content Workspace</h2>
-          <p>Create, edit, and publish services, portfolio items, blog/news posts, and core pages. Testimonials are client-submitted, so they are reviewed and approved before going live.</p>
         </div>
         <div className="screen-toolbar">
           <Link className="toolbar-button" href="/">Open Public Website</Link>
@@ -1043,10 +1138,10 @@ function ContentManagementScreen({ onAction }: { onAction: (message: string) => 
       </section>
 
       <section className="summary-grid" aria-label="Content summary">
-        <article className="summary-card"><span>Published Pages</span><strong>18</strong><p>Live public website content.</p></article>
-        <article className="summary-card accent-amber"><span>Drafts</span><strong>5</strong><p>Needs review before publishing.</p></article>
-        <article className="summary-card accent-amber"><span>Testimonials</span><strong>1</strong><p>Pending approval queue.</p></article>
-        <article className="summary-card accent-green"><span>Versions</span><strong>42</strong><p>Recoverable content revisions.</p></article>
+        <article className="summary-card"><span>Published Pages</span><strong>18</strong></article>
+        <article className="summary-card accent-amber"><span>Drafts</span><strong>5</strong></article>
+        <article className="summary-card accent-amber"><span>Testimonials</span><strong>1</strong></article>
+        <article className="summary-card accent-green"><span>Versions</span><strong>42</strong></article>
       </section>
 
       <div className="quote-tabs" role="tablist" aria-label="Content sections">
@@ -1244,7 +1339,6 @@ function TenderManagementScreen({ onAction }: { onAction: (message: string) => v
         <div>
           <p className="screen-kicker">Tender Management</p>
           <h2>Tender Repository And Bid Confirmation</h2>
-          <p>Auto-discovered procurement opportunities are classified, scored for eligibility and suitability, and then routed through one staff bid-confirmation checkpoint before bid work starts.</p>
         </div>
         <div className="screen-toolbar">
           <button className="toolbar-button" onClick={() => onAction("Configured procurement sources refreshed.")} type="button"><Icon name="search" size={15} /> Refresh Sources</button>
@@ -1253,10 +1347,10 @@ function TenderManagementScreen({ onAction }: { onAction: (message: string) => v
       </section>
 
       <section className="summary-grid" aria-label="Tender summary">
-        <article className="summary-card"><span>Discovered</span><strong>18</strong><p>From configured procurement sources.</p></article>
-        <article className="summary-card accent-amber"><span>Confirmation Queue</span><strong>6</strong><p>Staff must approve or override recommendation.</p></article>
-        <article className="summary-card accent-green"><span>Recommended</span><strong>9</strong><p>Suitable based on score and eligibility.</p></article>
-        <article className="summary-card accent-red"><span>Declined</span><strong>3</strong><p>Out of scope, ineligible, or too risky.</p></article>
+        <article className="summary-card"><span>Discovered</span><strong>18</strong></article>
+        <article className="summary-card accent-amber"><span>Confirmation Queue</span><strong>6</strong></article>
+        <article className="summary-card accent-green"><span>Recommended</span><strong>9</strong></article>
+        <article className="summary-card accent-red"><span>Declined</span><strong>3</strong></article>
       </section>
 
       <div className="quote-tabs" role="tablist" aria-label="Tender workflow sections">
@@ -1372,27 +1466,147 @@ function TenderManagementScreen({ onAction }: { onAction: (message: string) => v
 
 function EmployeeManagementScreen({ onAction }: { onAction: (message: string) => void }) {
   const [activeTab, setActiveTab] = useState("Registry");
-  const tabs = ["Registry", "Register Employee", "Contracts", "Salary", "Penalties", "Documents", "Reports"];
+  const [stats, setStats] = useState<any>(null);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [jobTitles, setJobTitles] = useState<any[]>([]);
+  const [employmentTypes, setEmploymentTypes] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [formData, setFormData] = useState({
+    employee_id: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    address: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    department: '',
+    job_title: '',
+    employment_type: '',
+    supervisor: '',
+    joining_date: '',
+  });
+
+  const API_BASE = "http://127.0.0.1:8000/api/employees";
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [statsRes, empRes, deptRes, jobRes, typeRes, contractRes, docRes, assignRes, histRes] = await Promise.all([
+        fetch(`${API_BASE}/dashboard/`),
+        fetch(`${API_BASE}/employees/`),
+        fetch(`${API_BASE}/departments/`),
+        fetch(`${API_BASE}/job-titles/`),
+        fetch(`${API_BASE}/employment-types/`),
+        fetch(`${API_BASE}/contracts/`),
+        fetch(`${API_BASE}/documents/`),
+        fetch(`${API_BASE}/assignments/`),
+        fetch(`${API_BASE}/history/`),
+      ]);
+      const statsData = await statsRes.json();
+      const empData = await empRes.json();
+      const deptData = await deptRes.json();
+      const jobData = await jobRes.json();
+      const typeData = await typeRes.json();
+      const contractData = await contractRes.json();
+      const docData = await docRes.json();
+      const assignData = await assignRes.json();
+      const histData = await histRes.json();
+      setStats(statsData);
+      setEmployees(empData.results || empData);
+      setFilteredEmployees(empData.results || empData);
+      setDepartments(deptData.results || deptData);
+      setJobTitles(jobData.results || jobData);
+      setEmploymentTypes(typeData.results || typeData);
+      setContracts(contractData.results || contractData);
+      setDocuments(docData.results || docData);
+      setAssignments(assignData.results || assignData);
+      setHistory(histData.results || histData);
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to load data:", err);
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    if (!query) {
+      setFilteredEmployees(employees);
+      return;
+    }
+    const lowerQuery = query.toLowerCase();
+    const filtered = employees.filter((emp) =>
+      emp.full_name?.toLowerCase().includes(lowerQuery) ||
+      emp.employee_id?.toLowerCase().includes(lowerQuery) ||
+      emp.email?.toLowerCase().includes(lowerQuery) ||
+      emp.department_name?.toLowerCase().includes(lowerQuery) ||
+      emp.job_title_name?.toLowerCase().includes(lowerQuery)
+    );
+    setFilteredEmployees(filtered);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_BASE}/employees/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        onAction("Employee registered successfully");
+        loadData();
+        setActiveTab("Registry");
+      } else {
+        onAction("Registration failed");
+      }
+    } catch (err) {
+      onAction("Registration error");
+    }
+  };
+
+  const tabs = ["Registry", "Register Employee", "Contracts", "Salary", "Assignments", "Documents", "History", "Settings"];
 
   return (
     <div className="inventory-tab-panel">
       <section className="screen-hero">
         <div>
           <p className="screen-kicker">Employee Management</p>
-          <h2>Employee Records And HR Operations</h2>
-          <p>Manage employee registration, profiles, contracts, contract terms, expiry monitoring, salary records, penalties, documents, and HR reports. Access is granted from Users by Administrator.</p>
+          <h2>Employee Records</h2>
         </div>
         <div className="screen-toolbar">
-          <button className="toolbar-button" onClick={() => onAction("Employee records export prepared.")} type="button">Export Records</button>
+          <button className="toolbar-button" onClick={() => onAction("Export employee records")} type="button"><Icon name="file" size={15} /> Export</button>
           <button className="toolbar-button primary" onClick={() => setActiveTab("Register Employee")} type="button"><Icon name="plus" size={15} /> Register Employee</button>
         </div>
       </section>
 
       <section className="summary-grid" aria-label="Employee management summary">
-        <article className="summary-card"><span>Total Employees</span><strong>36</strong><p>Active staff and contract workers.</p></article>
-        <article className="summary-card accent-amber"><span>Expiring Contracts</span><strong>4</strong><p>Within the next 60 days.</p></article>
-        <article className="summary-card"><span>On Probation</span><strong>3</strong><p>Require confirmation review.</p></article>
-        <article className="summary-card accent-red"><span>Penalty Reviews</span><strong>2</strong><p>Need HR/admin decision.</p></article>
+        <article className="summary-card clickable" onClick={() => setActiveTab("Registry")}>
+          <div className="card-icon"><Icon name="users" size={24} /></div>
+          <div className="card-content"><span>Total Employees</span><strong>{stats?.total_employees || 0}</strong></div>
+        </article>
+        <article className="summary-card clickable" onClick={() => setActiveTab("Registry")}>
+          <div className="card-icon"><Icon name="user" size={24} /></div>
+          <div className="card-content"><span>Active</span><strong>{stats?.active_employees || 0}</strong></div>
+        </article>
+        <article className="summary-card accent-amber clickable" onClick={() => setActiveTab("Contracts")}>
+          <div className="card-icon"><Icon name="calendar" size={24} /></div>
+          <div className="card-content"><span>Expiring Soon</span><strong>{stats?.contracts_expiring_soon || 0}</strong></div>
+        </article>
+        <article className="summary-card accent-red clickable" onClick={() => setActiveTab("Registry")}>
+          <div className="card-icon"><Icon name="logout" size={24} /></div>
+          <div className="card-content"><span>Exited</span><strong>{stats?.exited || 0}</strong></div>
+        </article>
       </section>
 
       <div className="quote-tabs" role="tablist" aria-label="Employee management sections">
@@ -1403,21 +1617,110 @@ function EmployeeManagementScreen({ onAction }: { onAction: (message: string) =>
 
       {activeTab === "Registry" && (
         <article className="ems-panel">
-          <div className="panel-heading"><div><p>Employee Registry</p><h2>Employee Records</h2></div><Badge label="36 employees" /></div>
+          <div className="panel-heading">
+            <div><p>Employee Registry</p><h2>Employee Records</h2></div>
+            <div className="panel-actions">
+              <input 
+                className="table-search" 
+                placeholder="Search employees..." 
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+              <Badge label={`${filteredEmployees.length} employees`} />
+            </div>
+          </div>
+          {loading ? <div className="loading-state">Loading employee data...</div> : (
+            <div className="table-scroll">
+              <table className="ems-table modern-table">
+                <thead><tr><th>ID</th><th>Employee</th><th>Position</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {filteredEmployees.length === 0 ? (
+                    <tr><td colSpan={6} className="empty-state">No employees found matching your search.</td></tr>
+                  ) : filteredEmployees.map((employee) => (
+                    <tr key={employee.id}>
+                      <td><span className="employee-id">{employee.employee_id}</span></td>
+                      <td>
+                        <div className="employee-cell">
+                          <strong>{employee.full_name}</strong>
+                          <small>{employee.email}</small>
+                        </div>
+                      </td>
+                      <td>{employee.job_title_name}</td>
+                      <td>{employee.department_name}</td>
+                      <td><Badge label={employee.status} /></td>
+                      <td>
+                        <div className="row-actions">
+                          <button onClick={() => onAction(`${employee.full_name} profile opened.`)} type="button" className="action-btn view">View</button>
+                          <button onClick={() => onAction(`${employee.full_name} edit opened.`)} type="button" className="action-btn edit">Edit</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+      )}
+
+      {activeTab === "Register Employee" && (
+        <form className="form-card modern-form" onSubmit={handleRegister}>
+          <div className="panel-heading"><div><p>Onboarding</p><h2>Register New Employee</h2></div><Badge label="Draft" /></div>
+          
+          <div className="form-section">
+            <h3>Personal Information</h3>
+            <div className="form-grid">
+              <label>Employee ID<input value={formData.employee_id} onChange={(e) => setFormData({...formData, employee_id: e.target.value})} placeholder="EMP001" /></label>
+              <label>First Name<input value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} placeholder="John" /></label>
+              <label>Last Name<input value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} placeholder="Doe" /></label>
+              <label>Email<input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} type="email" placeholder="john@example.com" /></label>
+              <label>Phone<input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+256 700 000 000" /></label>
+              <label className="span-two">Address<textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} placeholder="Residential address" /></label>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Employment Details</h3>
+            <div className="form-grid">
+              <label>Department<select value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})}><option value="">Select Department</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+              <label>Job Title<select value={formData.job_title} onChange={(e) => setFormData({...formData, job_title: e.target.value})}><option value="">Select Job Title</option>{jobTitles.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}</select></label>
+              <label>Employment Type<select value={formData.employment_type} onChange={(e) => setFormData({...formData, employment_type: e.target.value})}><option value="">Select Type</option>{employmentTypes.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
+              <label>Joining Date<input value={formData.joining_date} onChange={(e) => setFormData({...formData, joining_date: e.target.value})} type="date" /></label>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Emergency Contact</h3>
+            <div className="form-grid">
+              <label>Contact Name<input value={formData.emergency_contact} onChange={(e) => setFormData({...formData, emergency_contact: e.target.value})} placeholder="Emergency contact name" /></label>
+              <label>Contact Phone<input value={formData.emergency_phone} onChange={(e) => setFormData({...formData, emergency_phone: e.target.value})} placeholder="Emergency contact phone" /></label>
+            </div>
+          </div>
+
+          <div className="screen-toolbar" style={{ marginTop: 24, justifyContent: "flex-start" }}>
+            <button className="toolbar-button" onClick={() => setActiveTab("Registry")} type="button">Cancel</button>
+            <button className="toolbar-button primary" type="submit">Register Employee</button>
+          </div>
+        </form>
+      )}
+
+      {activeTab === "Contracts" && (
+        <article className="ems-panel">
+          <div className="panel-heading"><div><p>Contracts</p><h2>Contract Management</h2></div><Badge label={`${contracts.length} contracts`} /></div>
           <div className="table-scroll">
-            <table className="ems-table">
-              <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Status</th><th>Contract</th><th>Expiry</th><th>Salary</th><th>Actions</th></tr></thead>
+            <table className="ems-table modern-table">
+              <thead><tr><th>Employee</th><th>Type</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
-                {employeeRecords.map((employee) => (
-                  <tr key={employee.id}>
-                    <td>{employee.id}</td>
-                    <td>{employee.name}</td>
-                    <td>{employee.role}</td>
-                    <td><Badge label={employee.status} /></td>
-                    <td>{employee.contract}</td>
-                    <td>{employee.expiry}</td>
-                    <td>{employee.salary}</td>
-                    <td><div className="row-actions"><button onClick={() => onAction(`${employee.name} employee profile opened.`)} type="button">Profile</button><button onClick={() => onAction(`${employee.name} contract editor opened.`)} type="button">Contract</button></div></td>
+                {contracts.length === 0 ? (
+                  <tr><td colSpan={6} className="empty-state">No contracts found.</td></tr>
+                ) : contracts.map((contract) => (
+                  <tr key={contract.id}>
+                    <td><strong>{contract.employee_name}</strong></td>
+                    <td>{contract.contract_type}</td>
+                    <td>{contract.start_date}</td>
+                    <td>{contract.end_date}</td>
+                    <td><Badge label={contract.status} /></td>
+                    <td><div className="row-actions"><button onClick={() => onAction(`Contract ${contract.id} opened.`)} type="button" className="action-btn view">View</button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -1426,109 +1729,146 @@ function EmployeeManagementScreen({ onAction }: { onAction: (message: string) =>
         </article>
       )}
 
-      {activeTab === "Register Employee" && (
-        <form className="form-card" onSubmit={(event) => { event.preventDefault(); onAction("New employee registered and employee profile created."); }}>
-          <div className="panel-heading"><div><p>Onboarding</p><h2>Register New Employee</h2></div><Badge label="Draft" /></div>
-          <div className="form-grid">
-            <label>Full Name<input placeholder="Employee full name" /></label>
-            <label>Job Title<input placeholder="Technician" /></label>
-            <label>Department<select><option>Operations</option><option>Human Resource</option><option>Finance</option><option>Administration</option></select></label>
-            <label>Employment Status<select><option>Probation</option><option>Active</option><option>Contract</option><option>Suspended</option></select></label>
-            <label>Phone<input placeholder="+256..." /></label>
-            <label>Email<input placeholder="employee@spencerwater.co.ug" type="email" /></label>
-            <label className="span-two">Address / Emergency Contact<textarea placeholder="Address, next of kin, emergency phone, and notes." /></label>
-          </div>
-          <div className="screen-toolbar" style={{ marginTop: 16, justifyContent: "flex-start" }}>
-            <button className="toolbar-button" onClick={() => onAction("Employee draft saved.")} type="button">Save Draft</button>
-            <button className="toolbar-button primary" type="submit">Register Employee</button>
-          </div>
-        </form>
-      )}
-
-      {activeTab === "Contracts" && (
-        <section className="inventory-layout">
-          <article className="ems-panel">
-            <div className="panel-heading"><div><p>Contract Expiry</p><h2>Expiry Monitoring</h2></div><Badge label="4 alerts" /></div>
-            <div className="activity-list">
-              {employeeRecords.filter((employee) => employee.expiry !== "No expiry").map((employee) => (
-                <div className="activity-item" key={employee.id}>
-                  <span>{employee.expiry}</span>
-                  <strong>{employee.name}</strong>
-                  <p>{employee.contract} | {employee.status}</p>
-                  <div className="screen-toolbar" style={{ marginTop: 10, justifyContent: "flex-start" }}>
-                    <button className="toolbar-button" onClick={() => onAction(`${employee.name} renewal opened.`)} type="button">Renew</button>
-                    <button className="toolbar-button" onClick={() => onAction(`${employee.name} contract terms opened.`)} type="button">Terms</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
-          <form className="form-card" onSubmit={(event) => { event.preventDefault(); onAction("Contract terms saved."); }}>
-            <div className="panel-heading"><div><p>Contract Terms</p><h2>Contract Editor</h2></div><Icon name="file" size={18} /></div>
-            <div className="form-grid">
-              <label>Employee<select>{employeeRecords.map((employee) => <option key={employee.id}>{employee.name}</option>)}</select></label>
-              <label>Contract Type<select><option>Permanent</option><option>1-year contract</option><option>2-year contract</option><option>Probation</option></select></label>
-              <label>Start Date<input type="date" defaultValue="2026-07-07" /></label>
-              <label>Expiry Date<input type="date" defaultValue="2027-07-07" /></label>
-              <label className="span-two">Terms<textarea placeholder="Contract terms, duties, benefits, renewal conditions, and notes." /></label>
-            </div>
-            <div className="screen-toolbar" style={{ marginTop: 16, justifyContent: "flex-start" }}>
-              <button className="toolbar-button primary" type="submit">Save Contract</button>
-            </div>
-          </form>
-        </section>
-      )}
-
       {activeTab === "Salary" && (
         <article className="ems-panel">
-          <div className="panel-heading"><div><p>Salary Records</p><h2>Compensation</h2></div><Badge label="Confidential" /></div>
+          <div className="panel-heading"><div><p>Salary</p><h2>Salary Records</h2></div><Badge label="Confidential" /></div>
           <div className="table-scroll">
-            <table className="ems-table">
-              <thead><tr><th>Employee</th><th>Role</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>{employeeRecords.map((employee) => <tr key={employee.id}><td>{employee.name}</td><td>{employee.role}</td><td>{employee.salary}</td><td><Badge label={employee.status} /></td><td><div className="row-actions"><button onClick={() => onAction(`${employee.name} salary record opened.`)} type="button">View</button><button onClick={() => onAction(`${employee.name} salary adjustment opened.`)} type="button">Adjust</button></div></td></tr>)}</tbody>
+            <table className="ems-table modern-table">
+              <thead><tr><th>Employee</th><th>Position</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {employees.length === 0 ? (
+                  <tr><td colSpan={5} className="empty-state">No salary records found.</td></tr>
+                ) : employees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td><strong>{employee.full_name}</strong></td>
+                    <td>{employee.job_title_name}</td>
+                    <td>{employee.department_name}</td>
+                    <td><Badge label={employee.status} /></td>
+                    <td><div className="row-actions"><button onClick={() => onAction(`${employee.full_name} salary opened.`)} type="button" className="action-btn view">View</button></div></td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </article>
       )}
 
-      {activeTab === "Penalties" && (
+      {activeTab === "Assignments" && (
         <article className="ems-panel">
-          <div className="panel-heading"><div><p>Disciplinary</p><h2>Penalties And Reviews</h2></div><Badge label="2 open" /></div>
-          <div className="activity-list">
-            {employeePenalties.map(([id, issue, status, date]) => (
-              <div className="activity-item" key={`${id}-${issue}`}>
-                <span>{date}</span>
-                <strong>{id} | {issue}</strong>
-                <p>{status}</p>
-                <div className="screen-toolbar" style={{ marginTop: 10, justifyContent: "flex-start" }}>
-                  <button className="toolbar-button" onClick={() => onAction(`${id} penalty record opened.`)} type="button">View</button>
-                  <button className="toolbar-button primary" onClick={() => onAction(`${id} penalty decision saved.`)} type="button">Record Decision</button>
-                </div>
-              </div>
-            ))}
+          <div className="panel-heading"><div><p>Assignments</p><h2>Project Assignments</h2></div><Badge label={`${assignments.length} assignments`} /></div>
+          <div className="table-scroll">
+            <table className="ems-table modern-table">
+              <thead><tr><th>Employee</th><th>Project</th><th>Role</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {assignments.length === 0 ? (
+                  <tr><td colSpan={7} className="empty-state">No assignments found.</td></tr>
+                ) : assignments.map((assignment) => (
+                  <tr key={assignment.id}>
+                    <td><strong>{assignment.employee_name}</strong></td>
+                    <td>{assignment.project_name}</td>
+                    <td>{assignment.role}</td>
+                    <td>{assignment.start_date}</td>
+                    <td>{assignment.end_date || '-'}</td>
+                    <td><Badge label={assignment.is_current ? 'Active' : 'Ended'} /></td>
+                    <td><div className="row-actions"><button onClick={() => onAction(`Assignment ${assignment.id} opened.`)} type="button" className="action-btn view">View</button></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </article>
       )}
 
       {activeTab === "Documents" && (
-        <section className="ems-grid">
-          {["Contracts", "National ID", "Certificates", "Disciplinary Letters"].map((folder) => (
-            <article className="screen-card" key={folder}>
-              <div className="panel-heading"><div><p>Folder</p><h2>{folder}</h2></div><Icon name="file" size={18} /></div>
-              <p>Upload, review, and attach employee documents to employee profiles.</p>
-              <div className="screen-toolbar" style={{ marginTop: 12, justifyContent: "flex-start" }}>
-                <button className="toolbar-button" onClick={() => onAction(`${folder} document upload opened.`)} type="button">Upload</button>
-                <button className="toolbar-button" onClick={() => onAction(`${folder} folder opened.`)} type="button">Open</button>
-              </div>
-            </article>
-          ))}
-        </section>
+        <article className="ems-panel">
+          <div className="panel-heading"><div><p>Documents</p><h2>Employee Documents</h2></div><Badge label={`${documents.length} documents`} /></div>
+          <div className="table-scroll">
+            <table className="ems-table modern-table">
+              <thead><tr><th>Employee</th><th>Document Type</th><th>Title</th><th>Description</th><th>Uploaded</th><th>Actions</th></tr></thead>
+              <tbody>
+                {documents.length === 0 ? (
+                  <tr><td colSpan={6} className="empty-state">No documents found.</td></tr>
+                ) : documents.map((doc) => (
+                  <tr key={doc.id}>
+                    <td><strong>{doc.employee_name}</strong></td>
+                    <td>{doc.document_type}</td>
+                    <td>{doc.title}</td>
+                    <td>{doc.description || '-'}</td>
+                    <td>{doc.uploaded_at || '-'}</td>
+                    <td><div className="row-actions"><button onClick={() => onAction(`Document ${doc.id} opened.`)} type="button" className="action-btn view">View</button></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
       )}
 
-      {activeTab === "Reports" && (
+      {activeTab === "History" && (
+        <article className="ems-panel">
+          <div className="panel-heading"><div><p>History</p><h2>Employee History</h2></div><Badge label={`${history.length} records`} /></div>
+          <div className="table-scroll">
+            <table className="ems-table modern-table">
+              <thead><tr><th>Employee</th><th>Action</th><th>Description</th><th>Performed By</th><th>Timestamp</th></tr></thead>
+              <tbody>
+                {history.length === 0 ? (
+                  <tr><td colSpan={5} className="empty-state">No history records found.</td></tr>
+                ) : history.map((hist) => (
+                  <tr key={hist.id}>
+                    <td><strong>{hist.employee_name}</strong></td>
+                    <td><Badge label={hist.action} /></td>
+                    <td>{hist.description}</td>
+                    <td>{hist.performed_by || '-'}</td>
+                    <td>{hist.timestamp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      )}
+
+      {activeTab === "Settings" && (
         <section className="ems-grid">
-          <article className="ems-panel"><div className="panel-heading"><div><p>Reports</p><h2>Employee Reports</h2></div><Icon name="archive" size={18} /></div><p className="permission-note">Headcount, contract expiry, salary summary, disciplinary records, and onboarding reports.</p></article>
-          <article className="ems-panel"><div className="panel-heading"><div><p>Permissions</p><h2>Access Reminder</h2></div><Icon name="shield" size={18} /></div><p className="permission-note">Administrator has full access. Human Resource users see this module only when Admin grants Employee Management rights from Users.</p></article>
+          <article className="ems-panel">
+            <div className="panel-heading"><div><p>Departments</p><h2>Manage Departments</h2></div><Badge label={`${departments.length} items`} /></div>
+            <div className="activity-list">
+              {departments.length === 0 ? (
+                <div className="empty-state">No departments found.</div>
+              ) : departments.map((dept) => (
+                <div className="activity-item" key={dept.id}>
+                  <strong>{dept.name}</strong>
+                  <p>{dept.description || "No description"}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="ems-panel">
+            <div className="panel-heading"><div><p>Job Titles</p><h2>Manage Job Titles</h2></div><Badge label={`${jobTitles.length} items`} /></div>
+            <div className="activity-list">
+              {jobTitles.length === 0 ? (
+                <div className="empty-state">No job titles found.</div>
+              ) : jobTitles.map((job) => (
+                <div className="activity-item" key={job.id}>
+                  <strong>{job.title}</strong>
+                  <p>{job.description || "No description"}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="ems-panel">
+            <div className="panel-heading"><div><p>Employment Types</p><h2>Manage Employment Types</h2></div><Badge label={`${employmentTypes.length} items`} /></div>
+            <div className="activity-list">
+              {employmentTypes.length === 0 ? (
+                <div className="empty-state">No employment types found.</div>
+              ) : employmentTypes.map((empType) => (
+                <div className="activity-item" key={empType.id}>
+                  <strong>{empType.name}</strong>
+                  <p>{empType.description || "No description"}</p>
+                </div>
+              ))}
+            </div>
+          </article>
         </section>
       )}
     </div>
@@ -1542,7 +1882,6 @@ function SettingsScreen({ onAction }: { onAction: (message: string) => void }) {
         <div>
           <p className="screen-kicker">Settings</p>
           <h2>System Configuration</h2>
-          <p>Admin-configurable business rules for security, tender eligibility, notifications, integrations, backups, and operational thresholds. These values will drive backend enforcement once the API is connected.</p>
         </div>
         <div className="screen-toolbar">
           <button className="toolbar-button" onClick={() => onAction("Settings change history opened.")} type="button"><Icon name="history" size={15} /> History</button>
@@ -1551,10 +1890,10 @@ function SettingsScreen({ onAction }: { onAction: (message: string) => void }) {
       </section>
 
       <section className="summary-grid" aria-label="Settings summary">
-        <article className="summary-card"><span>Lockout Threshold</span><strong>5</strong><p>Failed login attempts before account lock.</p></article>
-        <article className="summary-card"><span>MFA Retry Limit</span><strong>3</strong><p>Maximum verification retries per session.</p></article>
-        <article className="summary-card"><span>Annual Turnover</span><strong>UGX 1.8B</strong><p>Verified value used for tender eligibility.</p></article>
-        <article className="summary-card accent-green"><span>Integrations</span><strong>4</strong><p>Email, WhatsApp, procurement, and storage.</p></article>
+        <article className="summary-card"><span>Lockout Threshold</span><strong>5</strong></article>
+        <article className="summary-card"><span>MFA Retry Limit</span><strong>3</strong></article>
+        <article className="summary-card"><span>Annual Turnover</span><strong>UGX 1.8B</strong></article>
+        <article className="summary-card accent-green"><span>Integrations</span><strong>4</strong></article>
       </section>
 
       <section className="ems-grid">
@@ -1624,7 +1963,6 @@ function AuditLogViewerScreen({ onAction }: { onAction: (message: string) => voi
         <div>
           <p className="screen-kicker">Audit Log Viewer</p>
           <h2>Read-Only System Activity</h2>
-          <p>System activity records are visible for review and compliance, but cannot be edited or deleted from the dashboard. Filters and exports preserve the original audit trail.</p>
         </div>
         <div className="screen-toolbar">
           <button className="toolbar-button" onClick={() => onAction("Audit filters focused.")} type="button"><Icon name="search" size={15} /> Filter</button>
@@ -1633,10 +1971,10 @@ function AuditLogViewerScreen({ onAction }: { onAction: (message: string) => voi
       </section>
 
       <section className="summary-grid" aria-label="Audit log summary">
-        <article className="summary-card"><span>Records Today</span><strong>3</strong><p>Captured from user and system actions.</p></article>
-        <article className="summary-card"><span>Security Events</span><strong>1</strong><p>MFA and access-control events.</p></article>
-        <article className="summary-card accent-amber"><span>Warnings</span><strong>1</strong><p>Needs administrator review.</p></article>
-        <article className="summary-card accent-green"><span>Retention</span><strong>On</strong><p>Audit records are preserved.</p></article>
+        <article className="summary-card"><span>Records Today</span><strong>3</strong></article>
+        <article className="summary-card"><span>Security Events</span><strong>1</strong></article>
+        <article className="summary-card accent-amber"><span>Warnings</span><strong>1</strong></article>
+        <article className="summary-card accent-green"><span>Retention</span><strong>On</strong></article>
       </section>
 
       <form className="filter-bar" onSubmit={(event) => { event.preventDefault(); onAction("Audit log filters applied."); }}>
@@ -2018,10 +2356,19 @@ export function AdminScreen({ pathSegments }: { pathSegments: string[] }) {
       <style>{adminStyles}</style>
       <Sidebar activeBase={module.basePath} onAction={setNotice} />
       <section className="ems-workspace">
-        <Topbar module={module} screen={screen} onAction={setNotice} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} />
+        <Topbar 
+          module={module} 
+          screen={screen} 
+          onAction={setNotice} 
+          onToggleSidebar={() => setSidebarCollapsed((value) => !value)} 
+        />
         <main className="ems-content">
           <div className="notice"><span>{notice}</span><button onClick={() => setNotice("Admin controls are ready.")} type="button">Reset</button></div>
-          <StandardScreen module={module} screen={screen} onAction={setNotice} />
+          <StandardScreen 
+            module={module} 
+            screen={screen} 
+            onAction={setNotice} 
+          />
         </main>
         <footer className="ems-footer">
           <span>Spencer Water Services Ltd Copyright 2026</span>

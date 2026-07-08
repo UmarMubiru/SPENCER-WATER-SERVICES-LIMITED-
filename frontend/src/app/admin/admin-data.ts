@@ -48,7 +48,7 @@ const screen = (
 
 export const modules: ModuleDefinition[] = [
   {
-    title: "Dashboard",
+    title: "HR Dashboard",
     basePath: "/admin",
     icon: "layout",
     screens: [
@@ -137,7 +137,14 @@ export const modules: ModuleDefinition[] = [
     basePath: "/admin/employees",
     icon: "user",
     screens: [
-      screen("Employee Management", "dashboard", "dashboard", "Employee registry, onboarding, records, contracts, salary, penalties, documents, expiry monitoring, and HR reports."),
+      screen("Dashboard", "dashboard", "dashboard", "Employee overview and statistics"),
+      screen("Directory", "directory", "table", "Employee listing and search"),
+      screen("Register", "register", "form", "Add new employee"),
+      screen("Profile", "profile", "workflow", "Employee details and history"),
+      screen("Contracts", "contracts", "table", "Contract management"),
+      screen("Documents", "documents", "table", "Employee documents"),
+      screen("Assignments", "assignments", "table", "Project assignments"),
+      screen("Settings", "settings", "settings", "Departments and job titles"),
     ],
   },
   {
