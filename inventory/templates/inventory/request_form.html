@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Material Request{% endblock %}
+
+{% block content %}
+
+<div class="card border-0 shadow-sm">
+
+<div class="card-header bg-white">
+
+<h4>Create Material Request</h4>
+
+</div>
+
+<div class="card-body">
+
+<form method="post">
+
+{% csrf_token %}
+
+<div class="row g-4">
+
+{% for field in form %}
+
+<div class="col-md-6">
+
+<label class="form-label">
+
+{{ field.label }}
+
+</label>
+
+{{ field }}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<hr>
+
+<h5 class="mb-3">
+
+Requested Items
+
+</h5>
+
+<table class="table" id="itemsTable">
+
+<thead>
+
+<tr>
+
+<th>Inventory Item</th>
+
+<th>Quantity</th>
+
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td>
+
+<select class="form-select" name="item[]">
+
+{% for item in inventory_items %}
+
+<option value="{{ item.id }}">
+
+{{ item.name }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+</td>
+
+<td>
+
+<input
+type="number"
+class="form-control"
+name="quantity[]"
+min="1">
+
+</td>
+
+<td>
+
+<button
+type="button"
+class="btn btn-danger removeRow">
+
+<i class="bi bi-trash"></i>
+
+</button>
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<button
+type="button"
+class="btn btn-outline-primary"
+id="addRow">
+
+<i class="bi bi-plus-circle"></i>
+
+Add Item
+
+</button>
+
+<hr>
+
+<div class="text-end">
+
+<a href="{% url 'request-list' %}" class="btn btn-light">
+
+Cancel
+
+</a>
+
+<button class="btn btn-primary">
+
+Submit Request
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+$("#addRow").click(function(){
+
+$("#itemsTable tbody").append(
+
+$("#itemsTable tbody tr:first").clone()
+
+);
+
+});
+
+$(document).on("click",".removeRow",function(){
+
+if($("#itemsTable tbody tr").length>1){
+
+$(this).closest("tr").remove();
+
+}
+
+});
+
+</script>
+
+{% endblock %}

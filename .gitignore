@@ -11,3 +11,4 @@ frontend/.next/
 frontend/.turbo/
 frontend/.env.local
 frontend/*.log
+water-env/
