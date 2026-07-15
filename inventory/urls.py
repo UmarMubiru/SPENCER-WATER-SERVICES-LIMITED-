@@ -1,3 +1,12 @@
-from django.urls import path
+from django.urls import path # type: ignore
+from rest_framework.routers import DefaultRouter # type: ignore
 
-urlpatterns = []
+from . import views
+
+router = DefaultRouter()
+router.register(r'categories', views.CategoryViewSet, basename='category')
+router.register(r'items', views.InventoryItemViewSet, basename='inventoryitem')
+router.register(r'requests', views.MaterialRequestViewSet, basename='materialrequest')
+router.register(r'stock-movements', views.StockMovementViewSet, basename='stockmovement')
+
+urlpatterns = router.urls
