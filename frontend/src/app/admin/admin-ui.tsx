@@ -35,6 +35,14 @@ export const adminStyles = `
 .ems-footer{align-items:center;background:#fff;border-top:1px solid #dce5ef;color:#64748b;display:flex;font-size:12px;font-weight:700;gap:16px;justify-content:space-between;min-height:44px;min-width:0;padding:8px 20px}.ems-footer span:last-child{align-items:center;display:flex;gap:6px}
 @media(max-width:1180px){.ems-shell{grid-template-columns:86px minmax(0,1fr)}.ems-brand img{width:58px}.ems-nav-link span,.ems-nav-link.logout span{display:none}.ems-nav-link{justify-content:center;padding:0}.ems-grid,.ems-grid.two-column,.screen-hero{grid-template-columns:1fr}}
 @media(max-width:860px){body:has(.ems-shell){overflow:auto}.ems-shell{display:block;height:auto;max-height:none;min-height:100dvh;overflow:visible;position:static;width:100%}.ems-sidebar{max-height:none;overflow:visible}.ems-nav{grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}.ems-workspace{display:block}.ems-topbar{grid-template-columns:1fr;min-height:auto;padding:14px}.ems-actions,.screen-toolbar{justify-content:flex-start}.ems-content{overflow:visible;padding:14px}.ops-grid,.cms-grid,.queue-grid,.screen-grid,.form-grid,.dashboard-layout,.lead-detail-layout,.profile-grid,.quote-layout,.inventory-layout{grid-template-columns:1fr}.stock-alert-card,.supplier-card{grid-template-columns:1fr}.cms-tile{grid-template-columns:auto minmax(0,1fr)}.cms-tile .badge{grid-column:2;justify-self:start}.ems-footer{align-items:flex-start;flex-direction:column;gap:8px;padding:12px 14px}}
+.pm-stat-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.pm-stat-card{align-items:flex-start;background:#fff;border:1px solid #dce5ef;border-radius:8px;display:flex;gap:12px;justify-content:space-between;padding:16px}.pm-stat-card span{color:#64748b;font-size:13px;font-weight:800}.pm-stat-card strong{color:#10243d;display:block;font-size:28px;line-height:1;margin:10px 0 4px}.pm-stat-card p{color:#64748b;font-size:12px;margin:0}.pm-stat-icon{align-items:center;border-radius:999px;display:flex;flex:0 0 auto;height:44px;justify-content:center;width:44px}.pm-stat-icon.blue{background:#dbeafe;color:#1e63b8}.pm-stat-icon.green{background:#dcfce7;color:#15805b}.pm-stat-icon.amber{background:#fff4cc;color:#9a6a00}.pm-stat-icon.red{background:#ffe4e4;color:#d94d4d}
+.pm-charts-grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}.pm-donut-wrap{align-items:center;display:flex;gap:20px}.pm-legend{display:grid;gap:10px;min-width:0}.pm-legend-row{align-items:center;color:#31516f;display:flex;font-size:13px;gap:8px}.pm-legend-dot{border-radius:999px;flex:0 0 auto;height:10px;width:10px}.pm-legend-row strong{color:#10243d;font-size:13px;margin-left:auto}.pm-donut-total{color:#64748b;font-size:13px;font-weight:800;margin-top:14px;text-align:center}
+.pm-bar-rows{display:grid;gap:14px;margin-top:6px}.pm-bar-row{align-items:center;display:grid;gap:10px;grid-template-columns:120px minmax(0,1fr) 26px}.pm-bar-row span{color:#31516f;font-size:13px;font-weight:700}.pm-bar-track{background:#f0f4f9;border-radius:999px;height:14px;overflow:hidden}.pm-bar-fill{background:#1e63b8;border-radius:999px;display:block;height:100%}.pm-bar-row strong{color:#10243d;font-size:13px}
+.pm-progress-ring-wrap{align-items:center;display:flex;flex-direction:column;position:relative}.pm-progress-center{align-items:center;display:flex;flex-direction:column;inset:0;justify-content:center;position:absolute}.pm-progress-center strong{color:#10243d;font-size:26px}.pm-progress-center span{color:#64748b;font-size:12px;font-weight:800}.pm-progress-list{display:grid;gap:12px;margin-top:18px;width:100%}.pm-progress-list-row{align-items:center;display:flex;gap:10px}.pm-progress-list-row span{color:#31516f;font-size:13px;font-weight:700}.pm-progress-list-row strong{color:#10243d;font-size:14px;margin-left:auto}.pm-progress-dot{border-radius:999px;flex:0 0 auto;height:10px;width:10px}
+.pm-table-progress{align-items:center;display:flex;gap:8px}.pm-table-progress-track{background:#f0f4f9;border-radius:999px;flex:1;height:8px;min-width:70px;overflow:hidden}.pm-table-progress-fill{background:#1e63b8;border-radius:999px;display:block;height:100%}
+.pm-pagination{align-items:center;display:flex;gap:6px;justify-content:flex-end;margin-top:6px}.pm-page-btn{background:#fff;border:1px solid #dce5ef;border-radius:6px;color:#31516f;cursor:pointer;font-size:13px;font-weight:800;height:32px;min-width:32px}.pm-page-btn.active{background:#1e63b8;border-color:#1e63b8;color:#fff}.pm-page-btn:disabled{color:#b7c3d1;cursor:default}.pm-table-footer{align-items:center;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-top:14px}.pm-table-footer p{color:#64748b;font-size:13px;margin:0}
+@media(max-width:1180px){.pm-charts-grid{grid-template-columns:1fr}}
+.form-label{color:#31516f;display:block;font-size:13px;font-weight:800;margin-bottom:7px}.form-checkbox-group{display:flex;flex-wrap:wrap;gap:10px}.form-checkbox{align-items:center;background:#f7fafc;border:1px solid #dce5ef;border-radius:8px;color:#31516f;display:flex;font-size:13px;font-weight:700;gap:8px;padding:8px 12px}
 `;
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -2027,6 +2035,326 @@ function AuditLogViewerScreen({ onAction }: { onAction: (message: string) => voi
   );
 }
 
+const projectSummaryStats = [
+  { label: "Total Projects", value: "24", helper: "All Projects", icon: "briefcase", accent: "blue" },
+  { label: "Ongoing Projects", value: "12", helper: "In Progress", icon: "activity", accent: "blue" },
+  { label: "Completed Projects", value: "8", helper: "This Year", icon: "check", accent: "green" },
+  { label: "On Hold Projects", value: "2", helper: "Paused", icon: "pause", accent: "amber" },
+  { label: "Overdue Tasks", value: "5", helper: "Requires Attention", icon: "alert", accent: "red" },
+];
+
+const projectStatusBreakdown = [
+  { label: "In Progress", count: 12, color: "#1e63b8" },
+  { label: "Completed", count: 8, color: "#19a56f" },
+  { label: "On Hold", count: 2, color: "#d89100" },
+  { label: "Cancelled", count: 2, color: "#d94d4d" },
+];
+
+const projectTypeBreakdown = [
+  { label: "Borehole Drilling", count: 9 },
+  { label: "Water Systems Installation", count: 6 },
+  { label: "Water Treatment", count: 4 },
+  { label: "Maintenance & Repair", count: 3 },
+  { label: "Consultancy", count: 2 },
+];
+
+const projectProgressOverview = { planned: 62, actual: 58, variance: -4 };
+
+const projectRecords = [
+  { code: "SWS-PRJ-2024-001", name: "Kampala Borehole Project", client: "KCCA", location: "Kampala", type: "Borehole Drilling", manager: "John S.", progress: 75, status: "In Progress", start: "02 Jan 2024", end: "30 Jun 2024" },
+  { code: "SWS-PRJ-2024-002", name: "Mukono Water System Installation", client: "Mukono District Council", location: "Mukono", type: "Water Systems Installation", manager: "Sarah N.", progress: 45, status: "In Progress", start: "15 Feb 2024", end: "15 Aug 2024" },
+  { code: "SWS-PRJ-2024-003", name: "Gulu Water Treatment Plant", client: "Gulu Water & Sewerage Co.", location: "Gulu", type: "Water Treatment", manager: "David O.", progress: 90, status: "In Progress", start: "10 Jan 2024", end: "30 Apr 2024" },
+  { code: "SWS-PRJ-2024-004", name: "Lira Borehole Project", client: "Lira District Council", location: "Lira", type: "Borehole Drilling", manager: "John S.", progress: 100, status: "Completed", start: "05 Dec 2023", end: "28 Feb 2024" },
+  { code: "SWS-PRJ-2024-005", name: "Hoima Maintenance Project", client: "Hoima City Council", location: "Hoima", type: "Maintenance & Repair", manager: "Sarah N.", progress: 20, status: "On Hold", start: "01 Mar 2024", end: "30 Sep 2024" },
+];
+
+const acceptedQuotationOptions = [
+  { id: "QTN-2026-118", client: "KCCA", summary: "Kampala Estates Borehole Drilling" },
+  { id: "QTN-2026-121", client: "Mukono District Council", summary: "Mukono Water Systems Installation" },
+  { id: "QTN-2026-126", client: "Gulu Water & Sewerage Co.", summary: "Gulu Water Treatment Plant" },
+];
+
+const projectServiceLines = ["Borehole Drilling", "Solar Pump Installation", "Water Systems Installation", "Water Treatment", "Plumbing", "Maintenance & Repair", "Consultancy"];
+
+const projectTechnicians = ["John S.", "Sarah N.", "David O.", "Peter Kato", "Simon Okello"];
+
+function ProjectStatIcon({ name }: { name: string }) {
+  const common = { "aria-hidden": true, fill: "none", height: 20, stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 2, viewBox: "0 0 24 24", width: 20 };
+  if (name === "activity") return <svg {...common}><path d="M22 12h-4l-3 8-6-16-3 8H2" /></svg>;
+  if (name === "pause") return <svg {...common}><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>;
+  if (name === "alert") return <svg {...common}><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4" /><path d="M12 17h.01" /></svg>;
+  return <Icon name={name as IconName} size={20} />;
+}
+
+function ProjectStatusDonut({ segments }: { segments: { label: string; count: number; color: string }[] }) {
+  const total = segments.reduce((sum, item) => sum + item.count, 0);
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
+  let cumulative = 0;
+  return (
+    <svg viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Projects by status">
+      <circle cx="80" cy="80" r={radius} fill="none" stroke="#f0f4f9" strokeWidth="20" />
+      {segments.map((segment) => {
+        const fraction = total === 0 ? 0 : segment.count / total;
+        const dash = fraction * circumference;
+        const circle = (
+          <circle
+            key={segment.label}
+            cx="80"
+            cy="80"
+            r={radius}
+            fill="none"
+            stroke={segment.color}
+            strokeWidth="20"
+            strokeDasharray={`${dash} ${circumference - dash}`}
+            strokeDashoffset={-cumulative}
+            transform="rotate(-90 80 80)"
+          />
+        );
+        cumulative += dash;
+        return circle;
+      })}
+    </svg>
+  );
+}
+
+function ProjectManagementScreen({ screen, onAction }: { screen: ScreenDefinition; onAction: (message: string) => void }) {
+  if (screen.slug === "create") return <CreateProjectScreen onAction={onAction} />;
+  return <ProjectsDashboardScreen onAction={onAction} />;
+}
+
+function CreateProjectScreen({ onAction }: { onAction: (message: string) => void }) {
+  return (
+    <>
+      <section className="screen-hero">
+        <div>
+          <p className="screen-kicker">Project Management</p>
+          <h2>Create Project</h2>
+          <p>Register a new project with customer, scope, schedule, budget, and team — the same Project record defined in the SWS Software Design Document.</p>
+        </div>
+        <div className="screen-toolbar">
+          <Link className="toolbar-button" href="/admin/projects/dashboard" onClick={() => onAction("Returned to Projects Dashboard.")}>Back to Dashboard</Link>
+        </div>
+      </section>
+
+      <form className="form-card" onSubmit={(event) => { event.preventDefault(); onAction("Project created and added to the registry."); }}>
+        <div className="panel-heading"><div><p>New Record</p><h2>Project Details</h2></div><Badge label="Draft" /></div>
+
+        <div className="form-section">
+          <h3>Project Origin</h3>
+          <div className="form-grid">
+            <label>Source Quotation
+              <select defaultValue="">
+                <option value="" disabled>Select an accepted quotation</option>
+                {acceptedQuotationOptions.map((item) => <option key={item.id} value={item.id}>{item.id} — {item.summary}</option>)}
+                <option value="manual">Manual entry (no quotation)</option>
+              </select>
+            </label>
+            <label>Source Tender (optional)<input placeholder="e.g. TEN-2026-044" /></label>
+            <label className="span-two">Client / Customer<input placeholder="Carried forward from the selected quotation, or enter manually" /></label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Project Details</h3>
+          <div className="form-grid">
+            <label>Project Name<input placeholder="e.g. Kampala Borehole Project" /></label>
+            <label>Service Line
+              <select defaultValue="">
+                <option value="" disabled>Select a service line</option>
+                {projectServiceLines.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>
+            <label>Site Location<input placeholder="Site address or coordinates" /></label>
+            <label>Project Reference<input placeholder="Auto-generated (e.g. PRJ-2026-0142)" disabled /></label>
+            <label className="span-two">Scope Description<textarea placeholder="Describe the scope of work, carried forward from the accepted quotation" /></label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Schedule &amp; Budget</h3>
+          <div className="form-grid">
+            <label>Planned Start Date<input type="date" /></label>
+            <label>Planned End Date<input type="date" /></label>
+            <label>Contract Value (UGX)<input type="number" min="0" placeholder="0.00" /></label>
+            <label>Initial Status
+              <select defaultValue="Not Started">
+                <option>Not Started</option>
+                <option>In Progress</option>
+                <option>On Hold</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Team Assignment</h3>
+          <div className="form-grid">
+            <label>Project Lead
+              <select defaultValue="">
+                <option value="" disabled>Select a project lead</option>
+                {projectTechnicians.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </label>
+            <div className="span-two">
+              <span className="form-label">Team Members</span>
+              <div className="form-checkbox-group">
+                {projectTechnicians.map((name) => (
+                  <label className="form-checkbox" key={name}><input type="checkbox" value={name} /> {name}</label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="screen-toolbar" style={{ marginTop: 16, justifyContent: "flex-start" }}>
+          <Link className="toolbar-button" href="/admin/projects/dashboard" onClick={() => onAction("Project creation cancelled.")}>Cancel</Link>
+          <button className="toolbar-button" onClick={() => onAction("Project saved as draft.")} type="button">Save Draft</button>
+          <button className="toolbar-button primary" type="submit">Create Project</button>
+        </div>
+      </form>
+    </>
+  );
+}
+
+function ProjectsDashboardScreen({ onAction }: { onAction: (message: string) => void }) {
+  const totalProjects = projectStatusBreakdown.reduce((sum, item) => sum + item.count, 0);
+  const maxTypeCount = Math.max(...projectTypeBreakdown.map((item) => item.count), 1);
+
+  return (
+    <>
+      <section className="screen-hero">
+        <div>
+          <p>Track and manage all projects across Spencer Water Services Ltd.</p>
+        </div>
+        <div className="screen-toolbar">
+          <Link className="toolbar-button primary" href="/admin/projects/create" onClick={() => onAction("Create Project form opened.")}><Icon name="plus" size={15} /> Create New Project</Link>
+        </div>
+      </section>
+
+      <section className="pm-stat-grid" aria-label="Project summary">
+        {projectSummaryStats.map((stat) => (
+          <article className="pm-stat-card" key={stat.label}>
+            <div>
+              <span>{stat.label}</span>
+              <strong>{stat.value}</strong>
+              <p>{stat.helper}</p>
+            </div>
+            <div className={`pm-stat-icon ${stat.accent}`}><ProjectStatIcon name={stat.icon} /></div>
+          </article>
+        ))}
+      </section>
+
+      <section className="pm-charts-grid">
+        <article className="ems-panel">
+          <div className="panel-heading"><div><p>Overview</p><h2>Projects by Status</h2></div></div>
+          <div className="pm-donut-wrap">
+            <ProjectStatusDonut segments={projectStatusBreakdown} />
+            <div className="pm-legend">
+              {projectStatusBreakdown.map((segment) => (
+                <div className="pm-legend-row" key={segment.label}>
+                  <span className="pm-legend-dot" style={{ background: segment.color }} />
+                  <span>{segment.label}</span>
+                  <strong>{segment.count} ({((segment.count / totalProjects) * 100).toFixed(1)}%)</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="pm-donut-total">Total: {totalProjects} Projects</p>
+        </article>
+
+        <article className="ems-panel">
+          <div className="panel-heading"><div><p>Overview</p><h2>Projects by Type</h2></div></div>
+          <div className="pm-bar-rows">
+            {projectTypeBreakdown.map((item) => (
+              <div className="pm-bar-row" key={item.label}>
+                <span>{item.label}</span>
+                <div className="pm-bar-track"><span className="pm-bar-fill" style={{ width: `${(item.count / maxTypeCount) * 100}%` }} /></div>
+                <strong>{item.count}</strong>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="ems-panel">
+          <div className="panel-heading"><div><p>Overview</p><h2>Project Progress Overview</h2></div></div>
+          <div className="pm-progress-ring-wrap">
+            <ProjectStatusDonut segments={[
+              { label: "Progress", count: projectProgressOverview.actual, color: "#1e63b8" },
+              { label: "Remaining", count: 100 - projectProgressOverview.actual, color: "#f0f4f9" },
+            ]} />
+            <div className="pm-progress-center">
+              <strong>{projectProgressOverview.actual}%</strong>
+              <span>Average Progress</span>
+            </div>
+          </div>
+          <div className="pm-progress-list">
+            <div className="pm-progress-list-row"><span className="pm-progress-dot" style={{ background: "#1e63b8" }} /><span>Planned Progress</span><strong>{projectProgressOverview.planned}%</strong></div>
+            <div className="pm-progress-list-row"><span className="pm-progress-dot" style={{ background: "#19a56f" }} /><span>Actual Progress</span><strong>{projectProgressOverview.actual}%</strong></div>
+            <div className="pm-progress-list-row"><span className="pm-progress-dot" style={{ background: "#d94d4d" }} /><span>Variance</span><strong>{projectProgressOverview.variance}%</strong></div>
+          </div>
+        </article>
+      </section>
+
+      <article className="ems-panel">
+        <div className="panel-heading">
+          <div><p>Project Registry</p><h2>All Projects</h2></div>
+          <div className="panel-actions">
+            <input className="table-search" aria-label="Search projects" placeholder="Search by project, client, or location..." />
+            <button className="toolbar-button" onClick={() => onAction("Filter panel focused.")} type="button"><Icon name="search" size={15} /> Filter</button>
+            <button className="toolbar-button" onClick={() => onAction("Project list export prepared.")} type="button">Export</button>
+            <Link className="toolbar-button primary" href="/admin/projects/create" onClick={() => onAction("Create Project form opened.")}><Icon name="plus" size={15} /> New Project</Link>
+          </div>
+        </div>
+        <div className="table-scroll">
+          <table className="ems-table modern-table">
+            <thead>
+              <tr>
+                <th>Project Code</th><th>Project Name</th><th>Client</th><th>Location</th><th>Type</th>
+                <th>Project Manager</th><th>Progress</th><th>Status</th><th>Start Date</th><th>End Date</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectRecords.map((project) => (
+                <tr key={project.code}>
+                  <td>{project.code}</td>
+                  <td><strong>{project.name}</strong></td>
+                  <td>{project.client}</td>
+                  <td>{project.location}</td>
+                  <td>{project.type}</td>
+                  <td>{project.manager}</td>
+                  <td>
+                    <div className="pm-table-progress">
+                      <div className="pm-table-progress-track"><span className="pm-table-progress-fill" style={{ width: `${project.progress}%` }} /></div>
+                      <span>{project.progress}%</span>
+                    </div>
+                  </td>
+                  <td><Badge label={project.status} /></td>
+                  <td>{project.start}</td>
+                  <td>{project.end}</td>
+                  <td><div className="row-actions"><button onClick={() => onAction(`${project.code} opened.`)} type="button">⋮</button></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="pm-table-footer">
+          <p>Showing 1 to {projectRecords.length} of {totalProjects} projects</p>
+          <div className="pm-pagination">
+            <button className="pm-page-btn" onClick={() => onAction("Previous page opened.")} type="button" disabled>&lt;</button>
+            <button className="pm-page-btn active" onClick={() => onAction("Page 1 opened.")} type="button">1</button>
+            <button className="pm-page-btn" onClick={() => onAction("Page 2 opened.")} type="button">2</button>
+            <button className="pm-page-btn" onClick={() => onAction("Page 3 opened.")} type="button">3</button>
+            <span>...</span>
+            <button className="pm-page-btn" onClick={() => onAction("Page 5 opened.")} type="button">5</button>
+            <button className="pm-page-btn" onClick={() => onAction("Next page opened.")} type="button">&gt;</button>
+          </div>
+        </div>
+      </article>
+    </>
+  );
+}
+
 function CrmScreen({ screen, onAction }: { screen: ScreenDefinition; onAction: (message: string) => void }) {
   if (screen.slug === "lead-details") return <CrmLeadDetail onAction={onAction} />;
   if (screen.slug === "lead-history-archive") return <CrmLeadHistoryArchive onAction={onAction} />;
@@ -2270,6 +2598,7 @@ function StandardScreen({ module, screen, onAction }: { module: ModuleDefinition
   if (module.basePath === "/admin/quotations") return <QuotationManagementScreen onAction={onAction} />;
   if (module.basePath === "/admin/content") return <ContentManagementScreen onAction={onAction} />;
   if (module.basePath === "/admin/employees") return <EmployeeManagementScreen onAction={onAction} />;
+  if (module.basePath === "/admin/projects") return <ProjectManagementScreen screen={screen} onAction={onAction} />;
   if (module.basePath === "/admin/inventory") return <InventoryManagementScreen onAction={onAction} />;
   if (module.basePath === "/admin/users") return <UserManagementScreen onAction={onAction} />;
   if (module.basePath === "/admin/settings") return <SettingsScreen onAction={onAction} />;

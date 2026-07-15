@@ -716,6 +716,74 @@ textarea {
   margin: 0;
 }
 
+/* Enhanced project card styles */
+.projects-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.project-title {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
+.project-ref {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.project-desc {
+  color: var(--muted);
+  margin: 10px 0 14px;
+}
+
+.project-meta {
+  display: flex;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  background: #eef4fb;
+  border-radius: 8px;
+  height: 10px;
+  width: 160px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg,var(--success),var(--blue));
+  height: 100%;
+}
+
+.progress-label { color: var(--muted); font-size: 13px; }
+
+.project-media { background: linear-gradient(135deg, rgba(30,99,184,0.06), #fff); display:flex; align-items:flex-end; padding: 14px; }
+.project-badge { background: white; color: var(--navy); border-radius: 8px; padding: 6px 10px; font-weight:800; font-size:12px; display:inline-block; }
+.project-location { color: var(--muted); font-size:12px; margin-left:12px }
+
+@media (max-width: 980px) {
+  .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .project-grid { grid-template-columns: 1fr; }
+  .project-media { min-height: 120px }
+}
+
 .category-row {
   display: flex;
   flex-wrap: wrap;
