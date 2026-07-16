@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
-from datetime import timedelta
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -81,7 +80,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'rest_framework_simplejwt',
     'leads',
     'quotations',
     'portfolio',
@@ -91,12 +89,6 @@ INSTALLED_APPS = [
     'tenders',
     'employees',
     'users',
-    'roles',
-    'projects',
-    'reports',
-    'services',
-    'core_pages',
-    'version_history',
 ]
 
 MIDDLEWARE = [
@@ -191,7 +183,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
@@ -200,27 +191,4 @@ REST_FRAMEWORK = {
     ],
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Mailgun SMTP credentials belong in .env; the console backend keeps local
-# development safe and lets admins copy a setup link while email is unconfigured.
-MAILGUN_SMTP_LOGIN = os.getenv('MAILGUN_SMTP_LOGIN', '')
-MAILGUN_SMTP_PASSWORD = os.getenv('MAILGUN_SMTP_PASSWORD', '')
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' if MAILGUN_SMTP_LOGIN and MAILGUN_SMTP_PASSWORD else 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = os.getenv('MAILGUN_SMTP_HOST', 'smtp.mailgun.org')
-EMAIL_PORT = int(os.getenv('MAILGUN_SMTP_PORT', '587'))
-EMAIL_HOST_USER = MAILGUN_SMTP_LOGIN
-EMAIL_HOST_PASSWORD = MAILGUN_SMTP_PASSWORD
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Spencer Water Services <noreply@localhost>')
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:3000').rstrip('/')

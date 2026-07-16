@@ -76,7 +76,11 @@ export function Header() {
       <header className="site-header">
         <div className="site-header-inner">
           <Link className="brand logo-only" href="/">
-            <img src="/sws-logo-current.png" alt="Spencer Water Services Ltd logo" width={350} height={250} />
+            <Image src="/sws-logo-current.png" alt="Spencer Water Services Ltd logo" width={302} height={212} priority />
+            <div className="brand-copy">
+              <strong>Spencer Water</strong>
+              <span>Services Ltd</span>
+            </div>
           </Link>
           <nav className="site-nav" aria-label="Main navigation">
             {mainNav.map((item) =>
@@ -131,7 +135,8 @@ export function Footer() {
     <footer className="footer">
       <div className="footer-inner">
         <div>
-          <img className="footer-logo" src="/sws-logo-current.png" alt="Spencer Water Services Ltd logo" width={350} height={250} />
+          <Image className="footer-logo" src="/sws-logo-current.png" alt="Spencer Water Services Ltd logo" width={302} height={212} />
+          <p>Reliable water solutions for homes, businesses, and communities across Uganda.</p>
         </div>
         <div>
           <h3>Quick Links</h3>

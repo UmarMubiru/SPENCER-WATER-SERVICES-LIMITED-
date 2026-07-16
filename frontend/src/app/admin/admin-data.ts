@@ -125,6 +125,14 @@ export const modules: ModuleDefinition[] = [
     ],
   },
   {
+    title: "Content Management",
+    basePath: "/admin/content",
+    icon: "gallery",
+    screens: [
+      screen("Content Management", "dashboard", "cms", "Services, portfolio, blog/news, testimonials review, core pages, publishing, and content version history."),
+    ],
+  },
+  {
     title: "Employee Management",
     basePath: "/admin/employees",
     icon: "user",
@@ -137,14 +145,6 @@ export const modules: ModuleDefinition[] = [
       screen("Documents", "documents", "table", "Employee documents"),
       screen("Assignments", "assignments", "table", "Project assignments"),
       screen("Settings", "settings", "settings", "Departments and job titles"),
-    ],
-  },
-  {
-    title: "Content Management",
-    basePath: "/admin/content",
-    icon: "gallery",
-    screens: [
-      screen("Content Management", "dashboard", "cms", "Services, portfolio, blog/news, testimonials review, core pages, publishing, and content version history."),
     ],
   },
   {
@@ -165,6 +165,14 @@ export const modules: ModuleDefinition[] = [
     ],
   },
   {
+    title: "Users",
+    basePath: "/admin/users",
+    icon: "users",
+    screens: [
+      screen("Users", "dashboard", "dashboard", "Users screen with account creation, user class assignment, role-based access control, and account status enforcement."),
+    ],
+  },
+  {
     title: "Settings",
     basePath: "/admin/settings",
     icon: "settings",
@@ -182,25 +190,21 @@ export const modules: ModuleDefinition[] = [
   },
 ];
 
-export const quickAdd = [
-  { label: "New Lead / Quotation", path: "/admin/quotations/dashboard" },
-  { label: "New Tender", path: "/admin/tenders/dashboard" },
-  { label: "New Blog", path: "/admin/content/dashboard" },
-  { label: "New Project", path: "/admin/projects/dashboard" },
-  { label: "New Employee", path: "/admin/employees/dashboard" },
-  { label: "Invite User", path: "/admin/users/dashboard" },
-];
+export const quickAdd = ["New Lead", "New Tender", "New Quotation", "New Blog", "New Project", "New Employee", "Inventory Item"];
 
 export const operations = [
-  ["36", "Employee Management", "4 contracts expiring", "blue", "/admin/employees/dashboard"],
-  ["76", "Customer Management", "12 with open work", "green", "/admin/crm/dashboard"],
-  ["42", "Lead & Quotation Management", "8 need follow-up", "amber", "/admin/quotations/dashboard"],
-  ["18", "Tender Management", "6 in confirmation", "blue", "/admin/tenders/dashboard"],
-  ["9", "Project Management", "3 nearing completion", "green", "/admin/projects/dashboard"],
-  ["7", "Inventory Management", "3 high priority alerts", "red", "/admin/inventory/dashboard"],
-  ["17", "Content Management", "Blogs and testimonials", "amber", "/admin/content/dashboard"],
-  ["24", "User Management", "Active system users", "blue", "/admin/users/dashboard"],
-  ["23", "Reports & Analytics", "Across all modules", "green", "/admin/reports/dashboard"],
+  ["184", "Total Leads", "18 new this month", "blue"],
+  ["76", "Active Customers", "12 with open work", "green"],
+  ["18", "Open Tenders", "6 in confirmation", "blue"],
+  ["42", "Quotations Pending", "8 need follow-up", "amber"],
+  ["9", "Projects in Progress", "3 nearing completion", "green"],
+  ["7", "Inventory Alerts", "3 high priority", "red"],
+  ["5", "Supplier Alerts", "Contracts and pricing", "amber"],
+  ["11", "Website Messages", "Unread contacts", "blue"],
+  ["5", "Pending Testimonials", "Approval queue", "amber"],
+  ["12", "Published Blogs", "2 scheduled", "green"],
+  ["36", "Employees", "4 contracts expiring", "blue"],
+  ["23", "Recent Activities", "Across all modules", "green"],
 ];
 
 export const sampleRows = [

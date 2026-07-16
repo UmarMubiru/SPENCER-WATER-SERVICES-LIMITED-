@@ -37,7 +37,7 @@ from .services import (
     InventoryError,
 )
 
-from .serializers import (
+from .serializers import ( # type: ignore
     CategorySerializer,
     InventoryItemSerializer,
     MaterialRequestSerializer,
