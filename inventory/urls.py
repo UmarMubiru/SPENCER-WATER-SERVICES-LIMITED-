@@ -1,4 +1,5 @@
 from django.urls import path # type: ignore
+<<<<<<< HEAD
 
 from . import views
 
@@ -58,3 +59,16 @@ urlpatterns = [
         name="request-detail",
     )
 ]
+=======
+from rest_framework.routers import DefaultRouter # type: ignore
+
+from . import views
+
+router = DefaultRouter()
+router.register(r'categories', views.CategoryViewSet, basename='category')
+router.register(r'items', views.InventoryItemViewSet, basename='inventoryitem')
+router.register(r'requests', views.MaterialRequestViewSet, basename='materialrequest')
+router.register(r'stock-movements', views.StockMovementViewSet, basename='stockmovement')
+
+urlpatterns = router.urls
+>>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14

@@ -1,5 +1,5 @@
-import { AdminScreen } from "./admin-ui";
+import { redirect } from 'next/navigation';
 
 export default function AdminDashboardPage() {
-  return <AdminScreen pathSegments={[]} />;
+  redirect('/admin/dashboard');
 }

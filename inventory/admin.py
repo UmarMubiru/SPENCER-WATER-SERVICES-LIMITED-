@@ -114,3 +114,4 @@ class StockMovementAdmin(admin.ModelAdmin):
     ordering = (
         "-created_at",
     )
+    

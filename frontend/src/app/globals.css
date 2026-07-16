@@ -1145,14 +1145,23 @@ textarea {
 }
 
 .admin-sidebar {
-  background: var(--navy);
-  color: white;
+  background: #f3f4f6 !important;
+  color: #0b2e5c;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   padding: 24px 20px;
   position: sticky;
   top: 0;
+}
+
+/* Force sidebar background override */
+aside.w-64 {
+  background-color: #f3f4f6 !important;
+}
+
+aside.custom-sidebar {
+  background-color: #f3f4f6 !important;
 }
 
 .admin-sidebar .brand {

@@ -9,6 +9,13 @@ from django.views.generic import ( # type: ignore
     ListView,
     DetailView,
 )
+<<<<<<< HEAD
+=======
+from rest_framework import viewsets, status # type: ignore
+from rest_framework.decorators import action # type: ignore
+from rest_framework.response import Response # type: ignore
+from rest_framework.permissions import IsAuthenticated # type: ignore
+>>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 
 from .forms import (
     CategoryForm,
@@ -21,13 +28,33 @@ from .models import (
     Category,
     InventoryItem,
     MaterialRequest,
+<<<<<<< HEAD
+=======
+    MaterialRequestItem,
+    StockMovement,
+>>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 )
 
 from .services import (
     MaterialRequestService,
+<<<<<<< HEAD
     InventoryError,
 )
 
+=======
+    InventoryService,
+    InventoryError,
+)
+
+from .serializers import (
+    CategorySerializer,
+    InventoryItemSerializer,
+    MaterialRequestSerializer,
+    MaterialRequestItemSerializer,
+    StockMovementSerializer,
+)
+
+>>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 class CategoryListView(LoginRequiredMixin, ListView):
     model = Category
     template_name = "inventory/category_list.html"
@@ -165,4 +192,72 @@ def issue_request(request, pk):
             str(e),
         )
 
+<<<<<<< HEAD
     return redirect("request-list")
+=======
+    return redirect("request-list")
+
+
+# REST API ViewSets
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = []  # Allow anonymous access for testing
+
+
+class InventoryItemViewSet(viewsets.ModelViewSet):
+    queryset = InventoryItem.objects.select_related('category').all()
+    serializer_class = InventoryItemSerializer
+    permission_classes = []  # Allow anonymous access for testing
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
+        return queryset
+
+
+class MaterialRequestViewSet(viewsets.ModelViewSet):
+    queryset = MaterialRequest.objects.select_related('requested_by', 'approved_by').prefetch_related('items__inventory_item').all()
+    serializer_class = MaterialRequestSerializer
+    permission_classes = []  # Allow anonymous access for testing
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        material_request = self.get_object()
+        try:
+            MaterialRequestService.approve_request(material_request, request.user)
+            return Response({'status': 'approved'}, status=status.HTTP_200_OK)
+        except InventoryError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'])
+    def issue(self, request, pk=None):
+        material_request = self.get_object()
+        try:
+            MaterialRequestService.issue_request(material_request, request.user)
+            return Response({'status': 'issued'}, status=status.HTTP_200_OK)
+        except InventoryError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = StockMovement.objects.select_related('inventory_item', 'performed_by').all()
+    serializer_class = StockMovementSerializer
+    permission_classes = []  # Allow anonymous access for testing
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        inventory_item = self.request.query_params.get('inventory_item')
+        if inventory_item:
+            queryset = queryset.filter(inventory_item_id=inventory_item)
+        return queryset
+>>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14

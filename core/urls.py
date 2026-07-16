@@ -23,5 +23,18 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/employees/', include('employees.urls')),
     path('api/users/', include('users.urls')),
+<<<<<<< HEAD
     path("inventory/", include("inventory.urls")),
+=======
+    path('api/roles/', include('roles.urls')),
+    path('api/projects/', include('projects.urls')),
+    path('api/inventory/', include('inventory.urls')),
+    path('api/reports/', include('reports.urls')),
+    path('api/content/blog/', include('blog.urls')),
+    path('api/content/testimonials/', include('testimonials.urls')),
+    path('api/content/portfolio/', include('portfolio.urls')),
+    path('api/content/services/', include('services.urls')),
+    path('api/content/core-pages/', include('core_pages.urls')),
+    path('api/content/version-history/', include('version_history.urls')),
+>>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
