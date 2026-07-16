@@ -9,13 +9,10 @@ from django.views.generic import ( # type: ignore
     ListView,
     DetailView,
 )
-<<<<<<< HEAD
-=======
 from rest_framework import viewsets, status # type: ignore
 from rest_framework.decorators import action # type: ignore
 from rest_framework.response import Response # type: ignore
 from rest_framework.permissions import IsAuthenticated # type: ignore
->>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 
 from .forms import (
     CategoryForm,
@@ -28,20 +25,14 @@ from .models import (
     Category,
     InventoryItem,
     MaterialRequest,
-<<<<<<< HEAD
-=======
     MaterialRequestItem,
     StockMovement,
->>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 )
 
 from .services import (
     MaterialRequestService,
-<<<<<<< HEAD
     InventoryError,
-)
 
-=======
     InventoryService,
     InventoryError,
 )
@@ -54,7 +45,6 @@ from .serializers import (
     StockMovementSerializer,
 )
 
->>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14
 class CategoryListView(LoginRequiredMixin, ListView):
     model = Category
     template_name = "inventory/category_list.html"
@@ -192,9 +182,6 @@ def issue_request(request, pk):
             str(e),
         )
 
-<<<<<<< HEAD
-    return redirect("request-list")
-=======
     return redirect("request-list")
 
 
@@ -260,4 +247,3 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
         if inventory_item:
             queryset = queryset.filter(inventory_item_id=inventory_item)
         return queryset
->>>>>>> 4f5b3e5994d89b10184d42424b6c939c21c13e14

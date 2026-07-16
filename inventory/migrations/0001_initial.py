@@ -122,11 +122,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='inventoryitem',
-            constraint=models.CheckConstraint(check=models.Q(('quantity__gte', 0)), name='inventory_quantity_non_negative'),
+            constraint=models.CheckConstraint(condition=models.Q(('quantity__gte', 0)), name='inventory_quantity_non_negative'),
         ),
         migrations.AddConstraint(
             model_name='inventoryitem',
-            constraint=models.CheckConstraint(check=models.Q(('reorder_level__gte', 0)), name='inventory_reorder_non_negative'),
+            constraint=models.CheckConstraint(condition=models.Q(('reorder_level__gte', 0)), name='inventory_reorder_non_negative'),
         ),
         migrations.AddIndex(
             model_name='materialrequest',
@@ -150,11 +150,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='materialrequestitem',
-            constraint=models.CheckConstraint(check=models.Q(('approved_quantity__lte', models.F('requested_quantity'))), name='approved_not_greater_than_requested'),
+            constraint=models.CheckConstraint(condition=models.Q(('approved_quantity__lte', models.F('requested_quantity'))), name='approved_not_greater_than_requested'),
         ),
         migrations.AddConstraint(
             model_name='materialrequestitem',
-            constraint=models.CheckConstraint(check=models.Q(('issued_quantity__lte', models.F('approved_quantity'))), name='issued_not_greater_than_approved'),
+            constraint=models.CheckConstraint(condition=models.Q(('issued_quantity__lte', models.F('approved_quantity'))), name='issued_not_greater_than_approved'),
         ),
         migrations.AddIndex(
             model_name='stockmovement',
@@ -170,10 +170,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='stockmovement',
-            constraint=models.CheckConstraint(check=models.Q(('balance_before__gte', 0)), name='balance_before_non_negative'),
+            constraint=models.CheckConstraint(condition=models.Q(('balance_before__gte', 0)), name='balance_before_non_negative'),
         ),
         migrations.AddConstraint(
             model_name='stockmovement',
-            constraint=models.CheckConstraint(check=models.Q(('balance_after__gte', 0)), name='balance_after_non_negative'),
+            constraint=models.CheckConstraint(condition=models.Q(('balance_after__gte', 0)), name='balance_after_non_negative'),
         ),
     ]
