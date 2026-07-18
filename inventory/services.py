@@ -141,11 +141,39 @@ class MaterialRequestService:
         request.approved_by = approver
         request.approved_at = timezone.now()
 
+        for item in items:
+            item.approved_quantity = item.requested_quantity
+            item.save(update_fields=['approved_quantity'])
+
         request.save(
             update_fields=[
                 "status",
                 "approved_by",
                 "approved_at",
+                "updated_at",
+            ]
+        )
+
+        return request
+
+    @staticmethod
+    @transaction.atomic
+    def reject_request(request, approver):
+
+        if request.status != RequestStatus.PENDING:
+            raise InvalidRequestStateError(
+                "Only pending requests can be rejected."
+            )
+
+        request.status = RequestStatus.REJECTED
+        request.rejected_by = approver
+        request.rejected_at = timezone.now()
+
+        request.save(
+            update_fields=[
+                "status",
+                "rejected_by",
+                "rejected_at",
                 "updated_at",
             ]
         )

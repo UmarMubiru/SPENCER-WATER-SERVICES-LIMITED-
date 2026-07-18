@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/Sidebar';
 import { Topbar } from '../../components/Topbar';
+import { api } from '../../../../lib/api';
 import Link from 'next/link';
 
 interface InventoryItem {
@@ -72,7 +73,7 @@ export default function InventoryDashboardPage() {
 
   const fetchInventory = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/items/');
+      const response = await api.get('/inventory/items/');
       if (response.ok) {
         const data = await response.json();
         setInventory(data);
@@ -101,9 +102,7 @@ export default function InventoryDashboardPage() {
     if (!confirm('Are you sure you want to delete this item?')) return;
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/inventory/items/${id}/`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/inventory/items/${id}/`);
       if (response.ok) {
         fetchInventory(); // Refresh the list
       } else {
@@ -171,6 +170,9 @@ export default function InventoryDashboardPage() {
                 <div className="flex gap-3">
                   <Link href="/admin/inventory/movements" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                     Stock Movements
+                  </Link>
+                  <Link href="/admin/inventory/requests" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    Material Requests
                   </Link>
                   <Link href="/admin/inventory/suppliers" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                     Suppliers

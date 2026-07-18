@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { AdminLayout } from '../../../components/AdminLayout';
 import Link from 'next/link';
+import { api } from '../../../../../lib/api';
 
 export default function AddSupplierPage() {
   const [formData, setFormData] = useState({
@@ -19,12 +20,8 @@ export default function AddSupplierPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/suppliers/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      
+      const response = await api.post('/inventory/suppliers/', formData);
+
       if (response.ok) {
         alert('Supplier added successfully!');
         window.location.href = '/admin/inventory/suppliers';

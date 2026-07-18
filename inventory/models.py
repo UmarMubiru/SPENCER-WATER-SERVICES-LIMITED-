@@ -186,6 +186,14 @@ class MaterialRequest(TimeStampedModel):
         related_name="approved_material_requests",
     )
 
+    rejected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="rejected_material_requests",
+    )
+
     status = models.CharField(
         max_length=20,
         choices=RequestStatus.choices,
@@ -201,6 +209,11 @@ class MaterialRequest(TimeStampedModel):
     )
 
     approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    rejected_at = models.DateTimeField(
         null=True,
         blank=True,
     )

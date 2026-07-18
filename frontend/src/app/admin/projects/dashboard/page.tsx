@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/Sidebar';
 import { Topbar } from '../../components/Topbar';
+import { api } from '../../../../lib/api';
 import Link from 'next/link';
 
 interface Project {
@@ -66,7 +67,7 @@ export default function ProjectsDashboardPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/projects/');
+      const response = await api.get('/projects/');
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
@@ -95,9 +96,7 @@ export default function ProjectsDashboardPage() {
     if (!confirm('Are you sure you want to delete this project?')) return;
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/projects/${id}/`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/projects/${id}/`);
       if (response.ok) {
         fetchProjects(); // Refresh the list
       } else {

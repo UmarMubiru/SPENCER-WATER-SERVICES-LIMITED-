@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AdminLayout } from '../components/AdminLayout';
+import { api } from '../../../lib/api';
 import { operations, quickAdd } from '../admin-data';
 
 export default function AdminDashboardPage() {
@@ -22,14 +23,14 @@ export default function AdminDashboardPage() {
   const fetchRealStats = async () => {
     try {
       // Fetch Employees stats
-      const employeesResponse = await fetch('http://127.0.0.1:8000/api/employees/dashboard/');
+      const employeesResponse = await api.get('/employees/dashboard/');
       let employeesStats = null;
       if (employeesResponse.ok) {
         employeesStats = await employeesResponse.json();
       }
 
       // Fetch Users stats
-      const usersResponse = await fetch('http://127.0.0.1:8000/api/users/stats/');
+      const usersResponse = await api.get('/users/stats/');
       let usersStats = null;
       if (usersResponse.ok) {
         usersStats = await usersResponse.json();

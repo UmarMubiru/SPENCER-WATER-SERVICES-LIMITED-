@@ -84,7 +84,9 @@ Requested Materials
 
 <th>Item</th>
 
-<th>Quantity</th>
+<th>Requested</th>
+
+<th>Approved</th>
 
 <th>Issued</th>
 
@@ -166,13 +168,35 @@ Workflow
 
 <i class="bi bi-check-circle-fill text-primary"></i>
 
-<strong>Approved</strong>
+<strong>Approved by {{ request.approved_by }}</strong>
 
 <br>
 
 <small>
 
 {{ request.approved_at }}
+
+</small>
+
+</div>
+
+{% endif %}
+
+{% if request.rejected_at %}
+
+<hr>
+
+<div class="timeline-item">
+
+<i class="bi bi-x-circle-fill text-danger"></i>
+
+<strong>Rejected by {{ request.rejected_by }}</strong>
+
+<br>
+
+<small>
+
+{{ request.rejected_at }}
 
 </small>
 

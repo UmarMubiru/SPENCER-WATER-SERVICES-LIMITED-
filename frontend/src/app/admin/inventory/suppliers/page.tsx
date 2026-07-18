@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
+import { api } from '../../../../lib/api';
 import Link from 'next/link';
 
 interface Supplier {
@@ -63,7 +64,7 @@ export default function SuppliersPage() {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/suppliers/');
+      const response = await api.get('/inventory/suppliers/');
       if (response.ok) {
         const data = await response.json();
         setSuppliers(data);
@@ -94,11 +95,7 @@ export default function SuppliersPage() {
 
   const handleToggleActive = async (supplier: Supplier) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/inventory/suppliers/${supplier.id}/`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !supplier.is_active }),
-      });
+      const response = await api.patch(`/inventory/suppliers/${supplier.id}/`, { is_active: !supplier.is_active });
       
       if (response.ok) {
         fetchSuppliers();

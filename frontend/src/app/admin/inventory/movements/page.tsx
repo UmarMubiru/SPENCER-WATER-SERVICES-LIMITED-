@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
+import { api } from '../../../../lib/api';
 import Link from 'next/link';
 
 interface StockMovement {
@@ -9,7 +10,7 @@ interface StockMovement {
   item_id: string;
   item_name: string;
   item_code: string;
-  movement_type: 'initial_stock' | 'purchase' | 'issue' | 'return' | 'adjustment';
+  movement_type: 'INITIAL' | 'PURCHASE' | 'ISSUE' | 'RETURN' | 'ADJUSTMENT';
   quantity: number;
   balance_before: number;
   balance_after: number;
@@ -66,7 +67,7 @@ export default function StockMovementsPage() {
 
   const fetchMovements = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/movements/');
+      const response = await api.get('/inventory/stock-movements/');
       if (response.ok) {
         const data = await response.json();
         setMovements(data);
@@ -80,7 +81,7 @@ export default function StockMovementsPage() {
 
   const fetchItems = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/items/');
+      const response = await api.get('/inventory/items/');
       if (response.ok) {
         const data = await response.json();
         setItems(data);
@@ -92,22 +93,22 @@ export default function StockMovementsPage() {
 
   const getMovementTypeColor = (type: string) => {
     const colors = {
-      initial_stock: 'bg-blue-100 text-blue-700',
-      purchase: 'bg-green-100 text-green-700',
-      issue: 'bg-orange-100 text-orange-700',
-      return: 'bg-purple-100 text-purple-700',
-      adjustment: 'bg-gray-100 text-gray-700',
+      INITIAL: 'bg-blue-100 text-blue-700',
+      PURCHASE: 'bg-green-100 text-green-700',
+      ISSUE: 'bg-orange-100 text-orange-700',
+      RETURN: 'bg-purple-100 text-purple-700',
+      ADJUSTMENT: 'bg-gray-100 text-gray-700',
     };
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
   const getMovementTypeLabel = (type: string) => {
     const labels = {
-      initial_stock: 'Initial Stock',
-      purchase: 'Purchase',
-      issue: 'Issue',
-      return: 'Return',
-      adjustment: 'Adjustment',
+      INITIAL: 'Initial Stock',
+      PURCHASE: 'Purchase',
+      ISSUE: 'Issue',
+      RETURN: 'Return',
+      ADJUSTMENT: 'Adjustment',
     };
     return labels[type as keyof typeof labels] || type;
   };
@@ -124,10 +125,10 @@ export default function StockMovementsPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
           {[
             { label: 'Total Movements', value: movements.length, color: 'blue' },
-            { label: 'Initial Stock', value: movements.filter(m => m.movement_type === 'initial_stock').length, color: 'blue' },
-            { label: 'Purchases', value: movements.filter(m => m.movement_type === 'purchase').length, color: 'green' },
-            { label: 'Issues', value: movements.filter(m => m.movement_type === 'issue').length, color: 'orange' },
-            { label: 'Returns', value: movements.filter(m => m.movement_type === 'return').length, color: 'purple' },
+            { label: 'Initial Stock', value: movements.filter(m => m.movement_type === 'INITIAL').length, color: 'blue' },
+            { label: 'Purchases', value: movements.filter(m => m.movement_type === 'PURCHASE').length, color: 'green' },
+            { label: 'Issues', value: movements.filter(m => m.movement_type === 'ISSUE').length, color: 'orange' },
+            { label: 'Returns', value: movements.filter(m => m.movement_type === 'RETURN').length, color: 'purple' },
           ].map((stat, index) => {
             const colorClasses = {
               blue: { bg: 'bg-blue-50', valueColor: 'text-blue-700' },
@@ -169,11 +170,11 @@ export default function StockMovementsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">All Types</option>
-                    <option value="initial_stock">Initial Stock</option>
-                    <option value="purchase">Purchase</option>
-                    <option value="issue">Issue</option>
-                    <option value="return">Return</option>
-                    <option value="adjustment">Adjustment</option>
+                    <option value="INITIAL">Initial Stock</option>
+                    <option value="PURCHASE">Purchase</option>
+                    <option value="ISSUE">Issue</option>
+                    <option value="RETURN">Return</option>
+                    <option value="ADJUSTMENT">Adjustment</option>
                   </select>
                 </div>
                 <div>

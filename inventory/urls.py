@@ -59,14 +59,7 @@ urlpatterns = [
     )
 ]
 
-from rest_framework.routers import DefaultRouter # type: ignore
-
 from . import views
 
-router = DefaultRouter()
-router.register(r'categories', views.CategoryViewSet, basename='category')
-router.register(r'items', views.InventoryItemViewSet, basename='inventoryitem')
-router.register(r'requests', views.MaterialRequestViewSet, basename='materialrequest')
-router.register(r'stock-movements', views.StockMovementViewSet, basename='stockmovement')
-
-urlpatterns = router.urls
+# Non-API inventory routes rendered using Django templates
+# API routes are exposed under /api/inventory/ via inventory.api_urls

@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../../components/AdminLayout';
 import Link from 'next/link';
+import { api } from '../../../../../lib/api';
 
 export default function AddMovementPage() {
   const [formData, setFormData] = useState({
     item_id: '',
-    movement_type: 'purchase' as const,
+    movement_type: 'PURCHASE' as const,
     quantity: 0,
     reference_type: '',
     reference: '',
@@ -21,7 +22,7 @@ export default function AddMovementPage() {
 
   const fetchItems = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/items/');
+      const response = await api.get('/inventory/items/');
       if (response.ok) {
         const data = await response.json();
         setItems(data);
@@ -35,12 +36,8 @@ export default function AddMovementPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/movements/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      
+      const response = await api.post('/inventory/stock-movements/', formData);
+
       if (response.ok) {
         alert('Movement added successfully!');
         window.location.href = '/admin/inventory/movements';
@@ -106,11 +103,11 @@ export default function AddMovementPage() {
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   >
-                    <option value="initial_stock">Initial Stock</option>
-                    <option value="purchase">Purchase</option>
-                    <option value="issue">Issue</option>
-                    <option value="return">Return</option>
-                    <option value="adjustment">Adjustment</option>
+                    <option value="INITIAL">Initial Stock</option>
+                    <option value="PURCHASE">Purchase</option>
+                    <option value="ISSUE">Issue</option>
+                    <option value="RETURN">Return</option>
+                    <option value="ADJUSTMENT">Adjustment</option>
                   </select>
                 </div>
                 
@@ -118,13 +115,14 @@ export default function AddMovementPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity *</label>
                   <input
                     type="number"
+                    min="1"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
                     required
-                    placeholder="Enter quantity (use positive for additions, negative for subtractions)"
+                    placeholder="Enter quantity"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Use positive for additions, negative for subtractions</p>
+                  <p className="text-xs text-gray-500 mt-1">Enter a positive quantity.</p>
                 </div>
               </div>
 

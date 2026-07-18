@@ -1,8 +1,11 @@
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.response import Response
-from rest_framework import status
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer # type: ignore
+from rest_framework_simplejwt.views import TokenObtainPairView # type: ignore
+from rest_framework.response import Response # type: ignore
+from rest_framework import status # type: ignore
 
+from django.contrib.auth import get_user_model # type: ignore
+
+User = get_user_model()
 class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -23,10 +26,20 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def run_validation(self, data):
-        if hasattr(data, 'get'):
-            if 'email' in data and 'username' not in data:
-                data = data.copy()
-                data['username'] = data['email']
+        print("Incoming data:", data)
+
+        if hasattr(data, "get") and "email" in data and "username" not in data:
+            data = data.copy()
+
+        try:
+            user = User.objects.get(email=data["email"])
+            print("Mapped email to username:", user.username)
+            data["username"] = user.username
+        except User.DoesNotExist:
+            print("No user found with email:", data["email"])
+            data["username"] = data["email"]
+
+        print("Final data:", data)
         return super().run_validation(data)
 
     def validate(self, attrs):

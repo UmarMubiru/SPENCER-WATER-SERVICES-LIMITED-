@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/Sidebar';
 import { Topbar } from '../../components/Topbar';
+import { api } from '../../../../lib/api';
 import Link from 'next/link';
 
 interface Report {
@@ -55,7 +56,7 @@ export default function ReportsDashboardPage() {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/reports/');
+      const response = await api.get('/reports/');
       if (response.ok) {
         const data = await response.json();
         setReports(Array.isArray(data) ? data : []);
@@ -74,11 +75,7 @@ export default function ReportsDashboardPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/reports/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generateForm),
-      });
+      const response = await api.post('/reports/', generateForm);
       
       if (response.ok) {
         setShowGenerateModal(false);
@@ -95,7 +92,7 @@ export default function ReportsDashboardPage() {
 
   const handleDownloadReport = async (reportId: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/reports/${reportId}/download/`);
+      const response = await api.get(`/reports/${reportId}/download/`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
