@@ -7,15 +7,19 @@ from .views import (
     ProjectCostLineViewSet,
     ProjectHistoryViewSet,
     ProjectTeamAssignmentHistoryViewSet,
+    ProjectFieldHistoryViewSet,
+    ProjectActivityViewSet,
 )
 
 router = DefaultRouter()
-router.register(r"", ProjectViewSet, basename="projects")
-router.register(r"milestones", ProjectMilestoneViewSet, basename="project-milestones")
 router.register(r"documents", ProjectDocumentViewSet, basename="project-documents")
+router.register(r"milestones", ProjectMilestoneViewSet, basename="project-milestones")
 router.register(r"cost-lines", ProjectCostLineViewSet, basename="project-cost-lines")
 router.register(r"history", ProjectHistoryViewSet, basename="project-history")
 router.register(r"assignments", ProjectTeamAssignmentHistoryViewSet, basename="project-assignments")
+router.register(r"field-history", ProjectFieldHistoryViewSet, basename="project-field-history")
+router.register(r"activities", ProjectActivityViewSet, basename="project-activities")
+router.register(r"", ProjectViewSet, basename="projects")
 
 urlpatterns = [
     path("", include(router.urls)),
