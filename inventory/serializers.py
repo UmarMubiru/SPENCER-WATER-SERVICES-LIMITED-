@@ -44,6 +44,12 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+        extra_kwargs = {
+            'item_code': {'required': False, 'allow_blank': True},
+        }
+        extra_kwargs = {
+            'item_code': {'required': False, 'allow_blank': True},
+        }
 
 
 class MaterialRequestItemSerializer(serializers.ModelSerializer):

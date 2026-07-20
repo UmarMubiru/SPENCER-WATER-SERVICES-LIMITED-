@@ -24,7 +24,6 @@ class InventoryItemForm(forms.ModelForm):
         model = InventoryItem
         fields = [
             "category",
-            "item_code",
             "name",
             "description",
             "unit",

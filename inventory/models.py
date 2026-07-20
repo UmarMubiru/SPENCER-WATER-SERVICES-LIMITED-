@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from django.conf import settings # type: ignore
@@ -92,6 +93,7 @@ class InventoryItem(TimeStampedModel):
     item_code = models.CharField(
         max_length=30,
         unique=True,
+        blank=True,
     )
 
     name = models.CharField(
@@ -147,6 +149,30 @@ class InventoryItem(TimeStampedModel):
                 name="inventory_reorder_non_negative",
             ),
         ]
+
+    def _generate_item_code_prefix(self) -> str:
+        raw_name = self.category.name if self.category else ''
+        prefix = re.sub(r'[^A-Z0-9]+', '', raw_name.upper())
+        prefix = prefix[:2] if len(prefix) >= 2 else prefix or 'IT'
+        return prefix
+
+    def _generate_next_item_code(self) -> str:
+        prefix = self._generate_item_code_prefix()
+        pattern = rf'^{re.escape(prefix)}-(\d+)$'
+        max_count = 0
+        existing_codes = InventoryItem.objects.filter(category=self.category, item_code__startswith=f"{prefix}-").values_list('item_code', flat=True)
+        for code in existing_codes:
+            match = re.match(pattern, code)
+            if match:
+                count = int(match.group(1))
+                if count > max_count:
+                    max_count = count
+        return f"{prefix}-{max_count + 1:04d}"
+
+    def save(self, *args, **kwargs):
+        if not self.item_code:
+            self.item_code = self._generate_next_item_code()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.item_code} - {self.name}"

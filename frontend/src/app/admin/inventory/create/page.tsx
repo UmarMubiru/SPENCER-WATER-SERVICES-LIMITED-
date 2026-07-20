@@ -5,6 +5,7 @@ import { Sidebar } from '../../components/Sidebar';
 import { Topbar } from '../../components/Topbar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api } from '../../../../lib/api';
 
 interface Category {
   id: string;
@@ -18,9 +19,12 @@ export default function CreateInventoryItemPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [categoryCreating, setCategoryCreating] = useState(false);
+  const [categoryCreateError, setCategoryCreateError] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [formData, setFormData] = useState({
     category: '',
-    item_code: '',
     name: '',
     description: '',
     unit: '',
@@ -34,9 +38,44 @@ export default function CreateInventoryItemPage() {
     fetchCategories();
   }, []);
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      setCategoryCreateError('Category name is required.');
+      return;
+    }
+
+    setCategoryCreating(true);
+    setCategoryCreateError(null);
+
+    try {
+      const payload = {
+        name: newCategoryName.trim(),
+        description: newCategoryDescription,
+        is_active: true,
+      };
+
+      const response = await api.post('/inventory/categories/', payload);
+      if (response.ok) {
+        const created = await response.json();
+        setCategories((prev) => [...prev, created]);
+        setFormData((prev) => ({ ...prev, category: created.id }));
+        setNewCategoryName('');
+        setNewCategoryDescription('');
+      } else {
+        const error = await response.json();
+        setCategoryCreateError(JSON.stringify(error));
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      setCategoryCreateError('Could not create category. Please try again.');
+    } finally {
+      setCategoryCreating(false);
+    }
+  };
+
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/categories/');
+      const response = await api.get('/inventory/categories/');
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -53,13 +92,18 @@ export default function CreateInventoryItemPage() {
     setSubmitting(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/items/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const payload = {
+        category: formData.category,
+        name: formData.name,
+        description: formData.description,
+        unit: formData.unit,
+        quantity: formData.quantity,
+        reorder_level: formData.reorder_level,
+        unit_cost: formData.unit_cost,
+        is_active: formData.is_active,
+      };
+
+      const response = await api.post('/inventory/items/', payload);
 
       if (response.ok) {
         router.push('/admin/inventory/dashboard');
@@ -116,33 +160,72 @@ export default function CreateInventoryItemPage() {
                       <option>Loading categories...</option>
                     </select>
                   ) : (
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
+                    <>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-sm text-gray-500">Item code is generated automatically from the selected category.</p>
+                    </>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Code</label>
-                  <input
-                    type="text"
-                    name="item_code"
-                    value={formData.item_code}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., PVC-2IN"
-                  />
+                <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">Create New Category</h3>
+                      <p className="text-xs text-slate-500">Add a category inline without leaving this page.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Category Name</label>
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., Chemical"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Category Description</label>
+                      <input
+                        type="text"
+                        value={newCategoryDescription}
+                        onChange={(e) => setNewCategoryDescription(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Optional description"
+                      />
+                    </div>
+                  </div>
+
+                  {categoryCreateError ? (
+                    <p className="mt-3 text-sm text-red-600">{categoryCreateError}</p>
+                  ) : null}
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      disabled={categoryCreating}
+                      className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-green-400"
+                    >
+                      {categoryCreating ? 'Creating category...' : 'Create Category'}
+                    </button>
+                  </div>
                 </div>
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
