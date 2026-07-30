@@ -1,400 +1,303 @@
-import re
 import uuid
 
-from django.conf import settings # type: ignore
-from django.core.validators import MinValueValidator # type: ignore
-from django.db import models # type: ignore
+from django.conf import settings
+from django.db import models
 
-
-# ==========================================================
-# ENUMS
-# ==========================================================
-
-class RequestStatus(models.TextChoices):
-    PENDING = "PENDING", "Pending"
-    APPROVED = "APPROVED", "Approved"
-    REJECTED = "REJECTED", "Rejected"
-    ISSUED = "ISSUED", "Issued"
-    COMPLETED = "COMPLETED", "Completed"
-
-
-class MovementType(models.TextChoices):
-    INITIAL = "INITIAL", "Initial Stock"
-    PURCHASE = "PURCHASE", "Purchase"
-    ISSUE = "ISSUE", "Issue"
-    RETURN = "RETURN", "Return"
-    ADJUSTMENT = "ADJUSTMENT", "Adjustment"
-
-
-# ==========================================================
-# BASE MODEL
-# ==========================================================
 
 class TimeStampedModel(models.Model):
+    """Abstract base carrying created_at / updated_at for every inventory model."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
+        ordering = ["-created_at"]
 
 
-# ==========================================================
-# CATEGORY
-# ==========================================================
+# ---------------------------------------------------------------------------
+# Category — shared between InventoryItem and Product
+# ---------------------------------------------------------------------------
 
 class Category(TimeStampedModel):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
+    name = models.CharField(max_length=128, unique=True)
+    description = models.TextField(blank=True)
 
-    name = models.CharField(
-        max_length=100,
-        unique=True,
-    )
-
-    description = models.TextField(
-        blank=True,
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-    )
-
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
+        verbose_name_plural = "Categories"
         ordering = ["name"]
-        indexes = [
-            models.Index(fields=["name"]),
-            models.Index(fields=["is_active"]),
-        ]
 
     def __str__(self):
         return self.name
 
 
-# ==========================================================
-# INVENTORY ITEM
-# ==========================================================
+# ---------------------------------------------------------------------------
+# Supplier
+# ---------------------------------------------------------------------------
+
+class Supplier(TimeStampedModel):
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        INACTIVE = "INACTIVE", "Inactive"
+
+    name = models.CharField(max_length=255)
+    contactPerson = models.CharField(max_length=255, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=32, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.ACTIVE
+    )
+
+    def __str__(self):
+        return self.name
+
+
+# ---------------------------------------------------------------------------
+# InventoryItem — internal stock consumed by projects (NOT sold to customers)
+# ---------------------------------------------------------------------------
 
 class InventoryItem(TimeStampedModel):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
+    sku = models.CharField(max_length=64, unique=True)
+    barcode = models.CharField(max_length=64, blank=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
     category = models.ForeignKey(
-        Category,
-        on_delete=models.PROTECT,
+        Category, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="inventory_items",
     )
+    unit = models.CharField(max_length=32, default="pcs")
 
-    item_code = models.CharField(
-        max_length=30,
-        unique=True,
-        blank=True,
+    quantity = models.PositiveIntegerField(default=0)
+    reorder_level = models.PositiveIntegerField(default=0)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="inventory_items",
     )
+    warehouse = models.CharField(max_length=128, blank=True)
 
-    name = models.CharField(
-        max_length=150,
-    )
-
-    description = models.TextField(
-        blank=True,
-    )
-
-    unit = models.CharField(
-        max_length=20,
-    )
-
-    quantity = models.PositiveIntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
-
-    reorder_level = models.PositiveIntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
-
-    unit_cost = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-    )
-
-    class Meta:
-        ordering = ["name"]
-
-        indexes = [
-            models.Index(fields=["item_code"]),
-            models.Index(fields=["name"]),
-            models.Index(fields=["category"]),
-            models.Index(fields=["is_active"]),
-        ]
-
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(quantity__gte=0),
-                name="inventory_quantity_non_negative",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(reorder_level__gte=0),
-                name="inventory_reorder_non_negative",
-            ),
-        ]
-
-    def _generate_item_code_prefix(self) -> str:
-        raw_name = self.category.name if self.category else ''
-        prefix = re.sub(r'[^A-Z0-9]+', '', raw_name.upper())
-        prefix = prefix[:2] if len(prefix) >= 2 else prefix or 'IT'
-        return prefix
-
-    def _generate_next_item_code(self) -> str:
-        prefix = self._generate_item_code_prefix()
-        pattern = rf'^{re.escape(prefix)}-(\d+)$'
-        max_count = 0
-        existing_codes = InventoryItem.objects.filter(category=self.category, item_code__startswith=f"{prefix}-").values_list('item_code', flat=True)
-        for code in existing_codes:
-            match = re.match(pattern, code)
-            if match:
-                count = int(match.group(1))
-                if count > max_count:
-                    max_count = count
-        return f"{prefix}-{max_count + 1:04d}"
-
-    def save(self, *args, **kwargs):
-        if not self.item_code:
-            self.item_code = self._generate_next_item_code()
-        super().save(*args, **kwargs)
+    class Meta(TimeStampedModel.Meta):
+        indexes = [models.Index(fields=["sku"]), models.Index(fields=["category"])]
 
     def __str__(self):
-        return f"{self.item_code} - {self.name}"
+        return f"{self.sku} — {self.name}"
+
+    @property
+    def status(self):
+        if self.quantity <= 0:
+            return "OUT_OF_STOCK"
+        if self.quantity <= self.reorder_level:
+            return "LOW_STOCK"
+        return "IN_STOCK"
 
 
-# ==========================================================
-# MATERIAL REQUEST
-# ==========================================================
+# ---------------------------------------------------------------------------
+# Product — customer-facing, sellable catalogue item
+# ---------------------------------------------------------------------------
 
-class MaterialRequest(TimeStampedModel):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
+class Product(TimeStampedModel):
+    sku = models.CharField(max_length=64, unique=True)
+    barcode = models.CharField(max_length=64, blank=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="products",
     )
+    unit = models.CharField(max_length=32, default="pcs")
 
-    request_number = models.CharField(
-        max_length=30,
-        unique=True,
+    quantity = models.PositiveIntegerField(default=0)
+    reorder_level = models.PositiveIntegerField(default=0)
+    cost_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    selling_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="products",
     )
+    is_active = models.BooleanField(default=True)
 
-    project_reference = models.CharField(
-        max_length=150,
-    )
-
-    requested_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="material_requests",
-    )
-
-    approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="approved_material_requests",
-    )
-
-    rejected_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="rejected_material_requests",
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=RequestStatus.choices,
-        default=RequestStatus.PENDING,
-    )
-
-    remarks = models.TextField(
-        blank=True,
-    )
-
-    requested_at = models.DateTimeField(
-        auto_now_add=True,
-    )
-
-    approved_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    rejected_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    class Meta:
-        ordering = ["-requested_at"]
-
-        indexes = [
-            models.Index(fields=["request_number"]),
-            models.Index(fields=["status"]),
-            models.Index(fields=["requested_by"]),
-            models.Index(fields=["requested_at"]),
-        ]
+    class Meta(TimeStampedModel.Meta):
+        indexes = [models.Index(fields=["sku"]), models.Index(fields=["category"])]
 
     def __str__(self):
-        return self.request_number
+        return f"{self.sku} — {self.name}"
+
+    @property
+    def status(self):
+        if self.quantity <= 0:
+            return "OUT_OF_STOCK"
+        if self.quantity <= self.reorder_level:
+            return "LOW_STOCK"
+        return "IN_STOCK"
 
 
-# ==========================================================
-# MATERIAL REQUEST ITEM
-# ==========================================================
-
-class MaterialRequestItem(TimeStampedModel):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
-    material_request = models.ForeignKey(
-        MaterialRequest,
-        on_delete=models.CASCADE,
-        related_name="items",
-    )
-
-    inventory_item = models.ForeignKey(
-        InventoryItem,
-        on_delete=models.PROTECT,
-        related_name="request_items",
-    )
-
-    requested_quantity = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)],
-    )
-
-    approved_quantity = models.PositiveIntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
-
-    issued_quantity = models.PositiveIntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-    )
-
-    remarks = models.TextField(
-        blank=True,
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=[
-                    "material_request",
-                    "inventory_item",
-                ],
-                name="unique_inventory_item_per_request",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(
-                    approved_quantity__lte=models.F("requested_quantity")
-                ),
-                name="approved_not_greater_than_requested",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(
-                    issued_quantity__lte=models.F("approved_quantity")
-                ),
-                name="issued_not_greater_than_approved",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.inventory_item.name} ({self.requested_quantity})"
-
-
-# ==========================================================
-# STOCK MOVEMENT
-# ==========================================================
+# ---------------------------------------------------------------------------
+# StockMovement — audit trail of InventoryItem quantity changes
+# ---------------------------------------------------------------------------
 
 class StockMovement(TimeStampedModel):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
+    class MovementType(models.TextChoices):
+        IN = "IN", "Stock In"
+        OUT = "OUT", "Stock Out"
 
     inventory_item = models.ForeignKey(
-        InventoryItem,
-        on_delete=models.PROTECT,
-        related_name="stock_movements",
+        InventoryItem, on_delete=models.CASCADE, related_name="movements"
     )
-
-    movement_type = models.CharField(
-        max_length=20,
-        choices=MovementType.choices,
-    )
-
-    quantity = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)],
-    )
-
-    balance_before = models.PositiveIntegerField()
-
-    balance_after = models.PositiveIntegerField()
-
-    reference_type = models.CharField(
-        max_length=50,
-        blank=True,
-    )
-
-    reference_id = models.UUIDField(
-        null=True,
-        blank=True,
-    )
-
+    movement_type = models.CharField(max_length=8, choices=MovementType.choices)
+    quantity = models.PositiveIntegerField()
+    reason = models.CharField(max_length=255, blank=True)
+    reference = models.CharField(max_length=128, blank=True)
     performed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="stock_movements",
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
-
-    remarks = models.TextField(
-        blank=True,
-    )
-
-    class Meta:
-        ordering = ["-created_at"]
-
-        indexes = [
-            models.Index(fields=["inventory_item"]),
-            models.Index(fields=["movement_type"]),
-            models.Index(fields=["created_at"]),
-        ]
-
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(balance_before__gte=0),
-                name="balance_before_non_negative",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(balance_after__gte=0),
-                name="balance_after_non_negative",
-            ),
-        ]
 
     def __str__(self):
-        return f"{self.inventory_item.name} - {self.movement_type}"
+        return f"{self.movement_type} {self.quantity} — {self.inventory_item.sku}"
+
+
+# ---------------------------------------------------------------------------
+# MaterialRequest — a project lead requesting InventoryItems for a project
+# ---------------------------------------------------------------------------
+
+class MaterialRequest(TimeStampedModel):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+        ISSUED = "ISSUED", "Issued"
+
+    # Soft reference to the projects app. Swap for a real FK to projects.Project
+    # once that model is confirmed — kept decoupled here on purpose.
+    project_id = models.UUIDField(null=True, blank=True)
+    project_name = models.CharField(max_length=255, blank=True)
+
+    department = models.CharField(max_length=128, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name="material_requests",
+    )
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.PENDING
+    )
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Request {self.id} ({self.status})"
+
+
+class MaterialRequestItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    request = models.ForeignKey(
+        MaterialRequest, on_delete=models.CASCADE, related_name="items"
+    )
+    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT)
+    quantity_requested = models.PositiveIntegerField()
+    quantity_approved = models.PositiveIntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.quantity_requested} x {self.inventory_item.sku}"
+
+
+# ---------------------------------------------------------------------------
+# SalesQuotation — a customer-facing quote built from sellable Products
+# (formerly "Quotation" — renamed for symmetry with SupplierQuotation below.
+#  URL path stays /api/inventory/quotations/ to avoid breaking existing links.)
+# ---------------------------------------------------------------------------
+
+class SalesQuotation(TimeStampedModel):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", "Draft"
+        SENT = "SENT", "Sent"
+        ACCEPTED = "ACCEPTED", "Accepted"
+        REJECTED = "REJECTED", "Rejected"
+
+    customer_name = models.CharField(max_length=255)
+    customer_email = models.EmailField(blank=True)
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.DRAFT
+    )
+    valid_until = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Sales Quotation {self.id} — {self.customer_name}"
+
+    @property
+    def total(self):
+        return sum((item.subtotal for item in self.items.all()), 0)
+
+
+class SalesQuotationItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    quotation = models.ForeignKey(
+        SalesQuotation, on_delete=models.CASCADE, related_name="items"
+    )
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    @property
+    def subtotal(self):
+        return self.quantity * self.unit_price
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.sku}"
+
+
+# ---------------------------------------------------------------------------
+# SupplierQuotation — an RFQ sent TO a supplier, asking for pricing on
+# InventoryItems (restocking) or Products (rare, but supported). Each line
+# item points at exactly one of inventory_item / product — enforced in the
+# serializer, not the DB, to keep this a plain FK setup.
+# ---------------------------------------------------------------------------
+
+class SupplierQuotation(TimeStampedModel):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", "Draft"
+        SENT = "SENT", "Sent"
+        RECEIVED = "RECEIVED", "Received"
+        ACCEPTED = "ACCEPTED", "Accepted"
+        REJECTED = "REJECTED", "Rejected"
+
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.PROTECT, related_name="supplier_quotations"
+    )
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.DRAFT
+    )
+    valid_until = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Supplier Quotation {self.id} — {self.supplier.name}"
+
+    @property
+    def total(self):
+        return sum((item.subtotal for item in self.items.all()), 0)
+
+
+class SupplierQuotationItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    quotation = models.ForeignKey(
+        SupplierQuotation, on_delete=models.CASCADE, related_name="items"
+    )
+    inventory_item = models.ForeignKey(
+        InventoryItem, on_delete=models.PROTECT, null=True, blank=True
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, null=True, blank=True
+    )
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    @property
+    def subtotal(self):
+        return self.quantity * self.unit_price
+
+    def __str__(self):
+        target = self.inventory_item or self.product
+        return f"{self.quantity} x {target.sku if target else '—'}"

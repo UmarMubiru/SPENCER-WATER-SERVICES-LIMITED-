@@ -5,6 +5,7 @@ import { Sidebar } from '../../../components/Sidebar';
 import { Topbar } from '../../../components/Topbar';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { api } from '../../../../../lib/api';
 
 interface InventoryItem {
   id: string;
@@ -26,16 +27,28 @@ export default function InventoryItemDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [item, setItem] = useState<InventoryItem | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [showJsonIds, setShowJsonIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchItem();
+    fetchHistory();
   }, [params.id]);
+
+  useEffect(() => {
+    // refetch when pagination or search changes
+    fetchHistory();
+  }, [page, pageSize]);
 
   const fetchItem = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/inventory/items/${params.id}/`);
+      const response = await api.get(`/inventory/items/${params.id}/`);
       if (response.ok) {
         const data = await response.json();
         setItem(data);
@@ -50,14 +63,35 @@ export default function InventoryItemDetailPage() {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      let url = `/inventory/item-history/?item=${params.id}&page=${page}&page_size=${pageSize}`;
+      if (searchQuery && searchQuery.length > 0) {
+        url += `&q=${encodeURIComponent(searchQuery)}`;
+      }
+
+      const resp = await api.get(url);
+      if (resp.ok) {
+        const d = await resp.json();
+        if (d && d.results) {
+          setHistory(d.results);
+          setTotalCount(d.count ?? null);
+        } else if (Array.isArray(d)) {
+          setHistory(d);
+          setTotalCount(d.length);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching history:', err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this item?')) return;
     
     setDeleting(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/inventory/items/${params.id}/`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/inventory/items/${params.id}/`);
       if (response.ok) {
         router.push('/admin/inventory/dashboard');
       } else {
@@ -197,6 +231,86 @@ export default function InventoryItemDetailPage() {
                   <p className="text-gray-700">{item.description}</p>
                 </div>
               )}
+
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-gray-800 mb-3">Change History</h3>
+                <div className="mb-3 flex items-center gap-3">
+                  <input
+                    placeholder="Search history..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="px-3 py-2 border rounded-lg w-64"
+                  />
+                  <button
+                    onClick={() => { setPage(1); fetchHistory(); }}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg"
+                  >
+                    Search
+                  </button>
+                  <div className="ml-auto text-sm text-gray-500">{totalCount !== null ? `${totalCount} entries` : ''}</div>
+                </div>
+
+                {history.length === 0 ? (
+                  <p className="text-sm text-gray-500">No history available for this item.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {history.map((h) => (
+                      <div key={h.id} className="p-3 border border-gray-100 rounded-lg bg-gray-50">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">{h.summary ?? h.field_name}</p>
+                            <p className="text-xs text-gray-500">By: {h.changed_by_name ?? 'system'} · {new Date(h.created_at).toLocaleString()}</p>
+                            {h.action === 'DELETE' || h.field_name === '__deleted__' ? (
+                              <div className="mt-2">
+                                <button
+                                  onClick={() => setShowJsonIds(prev => ({...prev, [h.id]: !prev[h.id]}))}
+                                  className="px-2 py-1 text-xs bg-gray-200 rounded"
+                                >
+                                  {showJsonIds[h.id] ? 'Hide JSON' : 'Show JSON'}
+                                </button>
+                                {showJsonIds[h.id] && (
+                                  <pre className="mt-2 p-2 bg-white border rounded text-xs overflow-auto">{(() => {
+                                    try {
+                                      const parsed = JSON.parse(h.old_value ?? h.new_value ?? '{}');
+                                      return JSON.stringify(parsed, null, 2);
+                                    } catch (e) {
+                                      return h.old_value ?? h.new_value ?? '';
+                                    }
+                                  })()}</pre>
+                                )}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div>
+                            <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-700">{h.action}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Pagination controls */}
+                {totalCount !== null && totalCount > pageSize && (
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      onClick={() => { if (page > 1) setPage(page - 1); }}
+                      className="px-3 py-1 bg-gray-200 rounded"
+                      disabled={page <= 1}
+                    >Prev</button>
+                    <div className="text-sm text-gray-600">Page {page} • Showing {pageSize} per page</div>
+                    <button
+                      onClick={() => { setPage(page + 1); }}
+                      className="px-3 py-1 bg-gray-200 rounded"
+                      disabled={page * pageSize >= (totalCount ?? 0)}
+                    >Next</button>
+                    <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="ml-auto border rounded px-2 py-1 text-sm">
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

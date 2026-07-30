@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import {Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+import { Space_Grotesk, Inter } from "next/font/google";
+
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -30,6 +30,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[color:var(--background)] text-[color:var(--foreground)]">
         {children}
+        className={`${spaceGrotesk.variable} ${inter.variable} font-sans`}
       </body>
     </html>
   );

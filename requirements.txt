@@ -7,3 +7,8 @@ psycopg[binary]>=3.2,<4
 python-dotenv==1.2.2
 sqlparse==0.5.5
 tzdata==2026.2
+djangorestframework-simplejwt
+django-filter
+psycopg2-binary
+drf-spectacular
+drf-spectacular-sidecar

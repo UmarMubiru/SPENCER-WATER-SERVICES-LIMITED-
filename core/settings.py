@@ -80,6 +80,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    "django_filters",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     'rest_framework',
     'rest_framework_simplejwt',
     'leads',
@@ -106,6 +109,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.current_user.CurrentUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -190,14 +194,41 @@ CSRF_TRUSTED_ORIGINS = env_list(
 CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": (
+        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
+        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
+    ),
+    "DEFAULT_PARSER_CLASSES": (
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "djangorestframework_camel_case.parser.CamelCaseFormParser",
+        "djangorestframework_camel_case.parser.CamelCaseMultiPartParser",
+    ),
+    "DEFAULT_SCHEMA_CLASS":
+
+    "drf_spectacular.openapi.AutoSchema",
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        "rest_framework.permissions.IsAuthenticated",
     ],
+     "DEFAULT_FILTER_BACKENDS": (
+
+        "django_filters.rest_framework.DjangoFilterBackend",
+
+    ),
+    "EXCEPTION_HANDLER":
+    
+        "inventory.exceptions.inventory_exception_handler",
+
+    "DEFAULT_PAGINATION_CLASS":
+
+        "inventory.pagination.InventoryPagination",
+
 }
 
 SIMPLE_JWT = {
@@ -208,6 +239,16 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+SPECTACULAR_SETTINGS = {
+
+    "TITLE": "Inventory Management API",
+
+    "DESCRIPTION": "Inventory REST API",
+
+    "VERSION": "1.0.0",
+
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

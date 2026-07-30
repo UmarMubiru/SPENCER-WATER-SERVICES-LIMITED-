@@ -1,61 +1,50 @@
-from django.contrib import admin # type: ignore
+from django.contrib import admin
 
-from .models import (
+from inventory.models import (
     Category,
     InventoryItem,
     MaterialRequest,
     MaterialRequestItem,
+    Product,
+    SalesQuotation,
+    SalesQuotationItem,
     StockMovement,
+    Supplier,
+    SupplierQuotation,
+    SupplierQuotationItem,
 )
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "is_active",
-        "created_at",
-    )
+    list_display = ("name",)
+    search_fields = ("name",)
 
-    search_fields = (
-        "name",
-    )
 
-    list_filter = (
-        "is_active",
-    )
-
-    ordering = (
-        "name",
-    )
+@admin.register(Supplier)
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ("name", "email", "phone", "status")
+    search_fields = ("name", "email")
 
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = (
-        "item_code",
-        "name",
-        "category",
-        "quantity",
-        "reorder_level",
-        "unit",
-        "unit_cost",
-        "is_active",
-    )
+    list_display = ("sku", "name", "category", "quantity", "reorder_level", "status")
+    search_fields = ("sku", "name")
+    list_filter = ("category", "supplier")
 
-    search_fields = (
-        "item_code",
-        "name",
-    )
 
-    list_filter = (
-        "category",
-        "is_active",
-    )
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ("sku", "name", "category", "selling_price", "quantity", "status", "is_active")
+    search_fields = ("sku", "name")
+    list_filter = ("category", "is_active")
 
-    ordering = (
-        "name",
-    )
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ("inventory_item", "movement_type", "quantity", "created_at")
+    list_filter = ("movement_type",)
 
 
 class MaterialRequestItemInline(admin.TabularInline):
@@ -65,53 +54,30 @@ class MaterialRequestItemInline(admin.TabularInline):
 
 @admin.register(MaterialRequest)
 class MaterialRequestAdmin(admin.ModelAdmin):
-    list_display = (
-        "request_number",
-        "project_reference",
-        "requested_by",
-        "status",
-        "requested_at",
-        "approved_by",
-    )
-
-    search_fields = (
-        "request_number",
-        "project_reference",
-    )
-
-    list_filter = (
-        "status",
-    )
-
-    ordering = (
-        "-requested_at",
-    )
-
+    list_display = ("id", "project_name", "department", "status", "created_at")
+    list_filter = ("status",)
     inlines = [MaterialRequestItemInline]
 
 
-@admin.register(StockMovement)
-class StockMovementAdmin(admin.ModelAdmin):
-    list_display = (
-        "inventory_item",
-        "movement_type",
-        "quantity",
-        "balance_before",
-        "balance_after",
-        "performed_by",
-        "created_at",
-    )
+class SalesQuotationItemInline(admin.TabularInline):
+    model = SalesQuotationItem
+    extra = 1
 
-    search_fields = (
-        "inventory_item__name",
-        "inventory_item__item_code",
-    )
 
-    list_filter = (
-        "movement_type",
-    )
+@admin.register(SalesQuotation)
+class SalesQuotationAdmin(admin.ModelAdmin):
+    list_display = ("id", "customer_name", "status", "valid_until", "created_at")
+    list_filter = ("status",)
+    inlines = [SalesQuotationItemInline]
 
-    ordering = (
-        "-created_at",
-    )
-    
+
+class SupplierQuotationItemInline(admin.TabularInline):
+    model = SupplierQuotationItem
+    extra = 1
+
+
+@admin.register(SupplierQuotation)
+class SupplierQuotationAdmin(admin.ModelAdmin):
+    list_display = ("id", "supplier", "status", "valid_until", "created_at")
+    list_filter = ("status",)
+    inlines = [SupplierQuotationItemInline]

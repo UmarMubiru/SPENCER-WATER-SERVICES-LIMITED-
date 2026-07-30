@@ -5,6 +5,7 @@ import { Sidebar } from '../../../components/Sidebar';
 import { Topbar } from '../../../components/Topbar';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { api } from '../../../../../lib/api';
 
 interface Category {
   id: string;
@@ -51,7 +52,7 @@ export default function EditInventoryItemPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory/categories/');
+      const response = await api.get('/inventory/categories/');
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -63,7 +64,7 @@ export default function EditInventoryItemPage() {
 
   const fetchItem = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/inventory/items/${params.id}/`);
+      const response = await api.get(`/inventory/items/${params.id}/`);
       if (response.ok) {
         const data = await response.json();
         setFormData({
@@ -93,20 +94,26 @@ export default function EditInventoryItemPage() {
     setSubmitting(true);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/inventory/items/${params.id}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await api.patch(`/inventory/items/${params.id}/`, formData);
 
       if (response.ok) {
         router.push(`/admin/inventory/details/${params.id}`);
-      } else {
-        const error = await response.json();
-        alert('Error updating item: ' + JSON.stringify(error));
+        return;
       }
+
+      // try to parse JSON error, fall back to text
+      let errText = '';
+      try {
+        const errJson = await response.json();
+        errText = JSON.stringify(errJson);
+      } catch (e) {
+        try {
+          errText = await response.text();
+        } catch (e2) {
+          errText = 'Unknown error';
+        }
+      }
+      alert(`Error updating item (status ${response.status}): ` + errText);
     } catch (error) {
       console.error('Error updating item:', error);
       alert('Error updating item. Please try again.');
