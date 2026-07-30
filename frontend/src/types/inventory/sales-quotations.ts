@@ -1,4 +1,4 @@
-export type SalesQuotationStatus = "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED";
+export type SalesQuotationStatus = "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED";
 
 export interface SalesQuotationItem {
   id: string;

@@ -16,7 +16,7 @@ export default function InventoryPageHeader({
   actionHref,
 }: InventoryPageHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="inventory-page-header flex items-end justify-between gap-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
           {title}
@@ -32,7 +32,7 @@ export default function InventoryPageHeader({
       {actionLabel && actionHref && (
         <Link
           href={actionHref}
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-white hover:bg-blue-700 transition"
+          className="shrink-0 rounded-lg bg-blue-600 px-5 py-2.5 text-white shadow-sm hover:bg-blue-700 transition"
         >
           {actionLabel}
         </Link>

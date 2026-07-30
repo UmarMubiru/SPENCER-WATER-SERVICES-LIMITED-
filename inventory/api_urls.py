@@ -38,8 +38,14 @@ urlpatterns = [
     # URL kept as /quotations/ intentionally, for continuity with earlier work.
     path("quotations/", views.SalesQuotationListCreateAPIView.as_view(), name="sales-quotation-list"),
     path("quotations/<uuid:pk>/", views.SalesQuotationDetailAPIView.as_view(), name="sales-quotation-detail"),
+    path("quotations/<uuid:pk>/send/", views.send_sales_quotation, name="sales-quotation-send"),
+    path("quotations/<uuid:pk>/accept/", views.accept_sales_quotation, name="sales-quotation-accept"),
+    path("quotations/<uuid:pk>/expire/", views.expire_sales_quotation, name="sales-quotation-expire"),
 
     # Supplier Quotations (RFQs sent TO suppliers, for InventoryItems or Products)
     path("supplier-quotations/", views.SupplierQuotationListCreateAPIView.as_view(), name="supplier-quotation-list"),
     path("supplier-quotations/<uuid:pk>/", views.SupplierQuotationDetailAPIView.as_view(), name="supplier-quotation-detail"),
+    path("supplier-quotations/<uuid:pk>/send/", views.send_supplier_quotation, name="supplier-quotation-send"),
+    path("supplier-quotations/<uuid:pk>/accept/", views.accept_supplier_quotation, name="supplier-quotation-accept"),
+    path("supplier-quotations/<uuid:pk>/reject/", views.reject_supplier_quotation, name="supplier-quotation-reject"),
 ]

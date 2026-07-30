@@ -10,11 +10,11 @@ export default function InventoryDashboardPage() {
   const { dashboard, loading } = useDashboard();
 
   if (loading || !dashboard) {
-    return <div className="p-8 text-blue-400">Loading...</div>;
+    return <div className="inventory-dashboard min-h-[calc(100vh-4rem)] p-8 text-blue-400">Loading...</div>;
   }
 
   return (
-    <div className="space-y-8 p-8">
+    <div className="inventory-dashboard min-h-[calc(100vh-4rem)] space-y-8 p-8">
       <InventoryPageHeader
         title="Inventory Dashboard"
         description="Inventory overview and operational insights."

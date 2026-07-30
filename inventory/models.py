@@ -214,6 +214,7 @@ class SalesQuotation(TimeStampedModel):
         SENT = "SENT", "Sent"
         ACCEPTED = "ACCEPTED", "Accepted"
         REJECTED = "REJECTED", "Rejected"
+        EXPIRED = "EXPIRED", "Expired"
 
     customer_name = models.CharField(max_length=255)
     customer_email = models.EmailField(blank=True)

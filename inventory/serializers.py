@@ -149,7 +149,7 @@ class MaterialRequestSerializer(serializers.ModelSerializer):
 
 
 class SalesQuotationItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_name = serializers.SerializerMethodField()
     product_sku = serializers.CharField(source="product.sku", read_only=True)
     subtotal = serializers.DecimalField(
         max_digits=14, decimal_places=2, read_only=True
@@ -161,6 +161,9 @@ class SalesQuotationItemSerializer(serializers.ModelSerializer):
             "id", "product", "product_name", "product_sku",
             "quantity", "unit_price", "subtotal",
         )
+
+    def get_product_name(self, obj):
+        return obj.product.name
 
 
 class SalesQuotationSerializer(serializers.ModelSerializer):
@@ -184,10 +187,8 @@ class SalesQuotationSerializer(serializers.ModelSerializer):
 
 
 class SupplierQuotationItemSerializer(serializers.ModelSerializer):
-    inventory_item_name = serializers.CharField(
-        source="inventory_item.name", read_only=True, default=""
-    )
-    product_name = serializers.CharField(source="product.name", read_only=True, default="")
+    inventory_item_name = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
     subtotal = serializers.DecimalField(
         max_digits=14, decimal_places=2, read_only=True
     )
@@ -208,6 +209,12 @@ class SupplierQuotationItemSerializer(serializers.ModelSerializer):
                 "Each line must reference exactly one of inventory_item or product."
             )
         return attrs
+
+    def get_inventory_item_name(self, obj):
+        return obj.inventory_item.name if obj.inventory_item else ""
+
+    def get_product_name(self, obj):
+        return obj.product.name if obj.product else ""
 
 
 class SupplierQuotationSerializer(serializers.ModelSerializer):

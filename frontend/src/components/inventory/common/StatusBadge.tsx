@@ -18,6 +18,7 @@ const STYLES: Record<string, string> = {
   DRAFT: "bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-200",
   SENT: "bg-blue-300 text-blue-900",
   ACCEPTED: "bg-blue-700 text-white",
+  EXPIRED: "bg-blue-100 text-blue-500 ring-1 ring-inset ring-blue-200",
 
   IN: "bg-blue-100 text-blue-800",
   OUT: "bg-blue-700 text-white",
@@ -36,6 +37,7 @@ const LABELS: Record<string, string> = {
   DRAFT: "Draft",
   SENT: "Sent",
   ACCEPTED: "Accepted",
+  EXPIRED: "Expired",
   IN: "Stock In",
   OUT: "Stock Out",
 };

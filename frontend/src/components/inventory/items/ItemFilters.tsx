@@ -17,7 +17,7 @@ export default function ItemFilters({
   const { categories } = useCategories({ page: 1 });
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="inventory-filter-bar grid gap-3 md:grid-cols-3">
       <input
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}

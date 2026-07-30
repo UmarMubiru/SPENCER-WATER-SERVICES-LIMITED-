@@ -115,23 +115,11 @@ urlpatterns = [
         name="salesquotation-detail",
     ),
 
-    # path(
-    #     "sales-quotations/<uuid:pk>/send/",
-    #     #send_sales_quotation,
-    #     name="salesquotation-send",
-    # ),
+    path("sales-quotations/<uuid:pk>/send/", send_sales_quotation, name="salesquotation-send"),
 
-    # path(
-    #     "sales-quotations/<uuid:pk>/accept/",
-    #     accept_sales_quotation,
-    #     name="salesquotation-accept",
-    # ),
+    path("sales-quotations/<uuid:pk>/accept/", accept_sales_quotation, name="salesquotation-accept"),
 
-    # path(
-    #     "sales-quotations/<uuid:pk>/expire/",
-    #     #expire_sales_quotation,
-    #     name="salesquotation-expire",
-    # ),
+    path("sales-quotations/<uuid:pk>/expire/", expire_sales_quotation, name="salesquotation-expire"),
 
     # Supplier Quotations
     path(
@@ -146,23 +134,11 @@ urlpatterns = [
         name="supplierquotation-detail",
     ),
 
-    # path(
-    #     "supplier-quotations/<uuid:pk>/send/",
-    #     #send_supplier_quotation,
-    #     name="supplierquotation-send",
-    # ),
+    path("supplier-quotations/<uuid:pk>/send/", send_supplier_quotation, name="supplierquotation-send"),
 
-    # path(
-    #     "supplier-quotations/<uuid:pk>/accept/",
-    #     #accept_supplier_quotation,
-    #     name="supplierquotation-accept",
-    # ),
+    path("supplier-quotations/<uuid:pk>/accept/", accept_supplier_quotation, name="supplierquotation-accept"),
 
-    # path(
-    #     "supplier-quotations/<uuid:pk>/reject/",
-    #     #reject_supplier_quotation,
-    #     name="supplierquotation-reject",
-    # ),
+    path("supplier-quotations/<uuid:pk>/reject/", reject_supplier_quotation, name="supplierquotation-reject"),
 
     # Reports
     path(

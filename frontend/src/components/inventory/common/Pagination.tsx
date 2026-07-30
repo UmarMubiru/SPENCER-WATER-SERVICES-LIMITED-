@@ -9,7 +9,7 @@ interface Props {
 
 export default function Pagination({ page, totalPages, onPrevious, onNext }: Props) {
   return (
-    <div className="flex items-center justify-end gap-3">
+    <div className="inventory-pagination flex w-fit items-center justify-end gap-3">
       <button
         onClick={onPrevious}
         disabled={page === 1}
