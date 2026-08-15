@@ -1,4 +1,5 @@
-export type RequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "ISSUED";
+export type RequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "INVALID";
+export type FulfillmentStatus = "NOT_ISSUED" | "PARTIALLY_ISSUED" | "COMPLETED";
 
 export interface MaterialRequestItem {
   id: string;
@@ -7,10 +8,13 @@ export interface MaterialRequestItem {
   inventoryItemSku?: string;
   quantityRequested: number;
   quantityApproved?: number | null;
+  quantityIssued: number;
+  quantityRemaining: number;
 }
 
 export interface MaterialRequest {
   id: string;
+  requestNumber: string;
   projectId?: string | null;
   projectName?: string;
   department?: string;
@@ -18,14 +22,22 @@ export interface MaterialRequest {
   requestedByName?: string;
   status: RequestStatus;
   notes?: string;
+  reviewedBy?: string | null;
+  reviewedByName?: string;
+  reviewedAt?: string | null;
+  reviewNotes?: string;
+  issuedBy?: string | null;
+  issuedByName?: string;
+  issuedAt?: string | null;
+  fulfillmentStatus: FulfillmentStatus;
   items: MaterialRequestItem[];
   createdAt: string;
   updatedAt: string;
 }
 
 export type MaterialRequestInput = {
-  projectId?: string | null;
-  projectName?: string;
+  projectId: string;
+  projectName: string;
   department?: string;
   notes?: string;
   items: { inventoryItem: string; quantityRequested: number }[];

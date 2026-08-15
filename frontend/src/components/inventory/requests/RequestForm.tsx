@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MaterialRequestInput } from "@/types/inventory/requests";
 import { useInventoryItems } from "@/hooks/inventory/useInventoryItems";
+import { useProjects } from "@/hooks/useProjects";
 
 interface Props {
   onSubmit: (data: MaterialRequestInput) => Promise<void>;
@@ -19,6 +20,8 @@ export default function RequestForm({ onSubmit }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { projects, loading: loadingProjects } = useProjects({});
+  const [projectId, setProjectId] = useState("");
   const [projectName, setProjectName] = useState("");
   const [department, setDepartment] = useState("");
   const [notes, setNotes] = useState("");
@@ -49,6 +52,7 @@ export default function RequestForm({ onSubmit }: Props) {
     setSubmitting(true);
     try {
       await onSubmit({
+        projectId,
         projectName,
         department,
         notes,
@@ -71,19 +75,46 @@ export default function RequestForm({ onSubmit }: Props) {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className={labelClass}>Project Name</label>
-          <input value={projectName} onChange={(e) => setProjectName(e.target.value)} className={inputClass} />
+          <label className={labelClass}>Project</label>
+          <select
+            value={projectId}
+            onChange={(e) => {
+              const selectedId = e.target.value;
+              setProjectId(selectedId);
+              const selectedProject = projects.find((p) => p.id === selectedId);
+              setProjectName(selectedProject?.name ?? "");
+            }}
+            className={inputClass}
+            required
+          >
+            <option value="">Select project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.project_reference} — {project.name}
+              </option>
+            ))}
+          </select>
+          {loadingProjects && (
+            <p className="mt-2 text-xs text-blue-400">Loading projects…</p>
+          )}
         </div>
 
         <div>
           <label className={labelClass}>Department</label>
           <input value={department} onChange={(e) => setDepartment(e.target.value)} className={inputClass} />
         </div>
+      </div>
 
-        <div className="md:col-span-2">
-          <label className={labelClass}>Notes</label>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} rows={3} />
+      {projectName && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-sm font-medium text-slate-700">Selected project</p>
+          <p className="mt-1 text-blue-900">{projectName}</p>
         </div>
+      )}
+
+      <div>
+        <label className={labelClass}>Notes</label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} rows={3} />
       </div>
 
       <div>

@@ -34,26 +34,50 @@ class MaterialRequestDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, IsInventoryUser])
-def approve_request(request, pk):
-    material_request = MaterialRequest.objects.get(pk=pk)
-    RequestService.approve(material_request, request.data.get("approved_quantities"))
-    return Response(MaterialRequestSerializer(material_request).data)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated, IsInventoryUser])
-def reject_request(request, pk):
-    material_request = MaterialRequest.objects.get(pk=pk)
-    RequestService.reject(material_request)
-    return Response(MaterialRequestSerializer(material_request).data)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated, IsInventoryUser])
-def issue_request(request, pk):
+def approve_material_request(request, pk):
     material_request = MaterialRequest.objects.get(pk=pk)
     try:
-        RequestService.issue(material_request, issued_by=request.user)
+        RequestService.approve(
+            material_request,
+            reviewer=request.user,
+            approved_quantities=request.data.get("approvedQuantities"),
+            review_notes=request.data.get("notes", ""),
+        )
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    return Response(MaterialRequestSerializer(material_request).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsInventoryUser])
+def reject_material_request(request, pk):
+    material_request = MaterialRequest.objects.get(pk=pk)
+    RequestService.reject(
+        material_request, reviewer=request.user, review_notes=request.data.get("notes", "")
+    )
+    return Response(MaterialRequestSerializer(material_request).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsInventoryUser])
+def invalidate_material_request(request, pk):
+    material_request = MaterialRequest.objects.get(pk=pk)
+    RequestService.invalidate(
+        material_request, reviewer=request.user, review_notes=request.data.get("notes", "")
+    )
+    return Response(MaterialRequestSerializer(material_request).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsInventoryUser])
+def fulfill_material_request(request, pk):
+    material_request = MaterialRequest.objects.get(pk=pk)
+    try:
+        RequestService.fulfill(
+            material_request,
+            issued_by=request.user,
+            issued_quantities=request.data.get("issuedQuantities"),
+        )
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=400)
     return Response(MaterialRequestSerializer(material_request).data)

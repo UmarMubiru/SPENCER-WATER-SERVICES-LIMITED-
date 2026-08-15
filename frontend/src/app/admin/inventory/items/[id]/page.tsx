@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import InventoryPageHeader from "@/components/inventory/layout/InventoryPageHeader";
 import StatusBadge from "@/components/inventory/common/StatusBadge";
+import MovementTable from "@/components/inventory/movements/MovementTable";
 import { useInventoryItem } from "@/hooks/inventory/useInventoryItems";
 import { useMovements } from "@/hooks/inventory/useMovements";
 
@@ -28,7 +29,7 @@ export default function InventoryItemDetailPage() {
         <div className="space-y-4 rounded-xl border border-blue-100 bg-white p-6 shadow-sm lg:col-span-2">
           <h3 className="font-semibold text-blue-900">Item Information</h3>
           <dl className="grid grid-cols-2 gap-4 text-sm">
-            <div><dt className="text-blue-400">Category</dt><dd className="text-blue-900">{item.category || "—"}</dd></div>
+            <div><dt className="text-blue-400">Category</dt><dd className="text-blue-900">{item.categoryName || "—"}</dd></div>
             <div><dt className="text-blue-400">Unit</dt><dd className="text-blue-900">{item.unit}</dd></div>
             <div><dt className="text-blue-400">Unit Cost</dt><dd className="text-blue-900">{item.unitCost}</dd></div>
             <div><dt className="text-blue-400">Warehouse</dt><dd className="text-blue-900">{item.warehouse || "—"}</dd></div>
@@ -50,27 +51,9 @@ export default function InventoryItemDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-blue-100 bg-white shadow-sm">
-        <div className="border-b border-blue-100 p-5">
-          <h3 className="font-semibold text-blue-900">Movement History</h3>
-        </div>
-        <div className="divide-y divide-blue-50">
-          {movements.map((m) => (
-            <div key={m.id} className="flex items-center justify-between px-5 py-4">
-              <div>
-                <p className="font-medium text-blue-900">{m.reason || "—"}</p>
-                <p className="text-sm text-blue-400">{new Date(m.createdAt).toLocaleString()}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-blue-700">{m.quantity}</span>
-                <StatusBadge status={m.movementType} />
-              </div>
-            </div>
-          ))}
-          {movements.length === 0 && (
-            <div className="px-5 py-8 text-center text-blue-400">No movements yet.</div>
-          )}
-        </div>
+      <div>
+        <h3 className="mb-3 font-semibold text-blue-900">Stock Movement Ledger</h3>
+        <MovementTable movements={movements} hideItemColumn />
       </div>
     </div>
   );

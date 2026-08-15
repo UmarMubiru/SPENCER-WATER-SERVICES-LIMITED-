@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class TimeStampedModel(models.Model):
@@ -42,7 +43,7 @@ class Supplier(TimeStampedModel):
         INACTIVE = "INACTIVE", "Inactive"
 
     name = models.CharField(max_length=255)
-    contactPerson = models.CharField(max_length=255, blank=True)
+    contact_person = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=32, blank=True)
     address = models.CharField(max_length=255, blank=True)
@@ -118,6 +119,9 @@ class Product(TimeStampedModel):
         Supplier, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="products",
     )
+    brand = models.CharField(max_length=128, blank=True)
+    warehouse = models.CharField(max_length=128, blank=True)
+    image = models.TextField(blank=True, default="")
     is_active = models.BooleanField(default=True)
 
     class Meta(TimeStampedModel.Meta):
@@ -144,13 +148,36 @@ class StockMovement(TimeStampedModel):
         IN = "IN", "Stock In"
         OUT = "OUT", "Stock Out"
 
+    class MovementReason(models.TextChoices):
+        PURCHASE = "PURCHASE", "Purchase"
+        RETURN = "RETURN", "Return"
+        REQUEST_ISSUE = "REQUEST_ISSUE", "Issued for Request"
+        ADJUSTMENT = "ADJUSTMENT", "Adjustment"
+        DAMAGED = "DAMAGED", "Damaged / Written Off"
+        OTHER = "OTHER", "Other"
+
     inventory_item = models.ForeignKey(
         InventoryItem, on_delete=models.CASCADE, related_name="movements"
     )
     movement_type = models.CharField(max_length=8, choices=MovementType.choices)
-    quantity = models.PositiveIntegerField()
-    reason = models.CharField(max_length=255, blank=True)
+    reason = models.CharField(
+        max_length=16, choices=MovementReason.choices, default=MovementReason.OTHER
+    )
+    notes = models.CharField(max_length=255, blank=True)
     reference = models.CharField(max_length=128, blank=True)
+
+    quantity = models.PositiveIntegerField()
+    quantity_before = models.PositiveIntegerField(default=0)
+    quantity_after = models.PositiveIntegerField(default=0)
+
+    # When the purchase/return/etc. actually happened — distinct from
+    # created_at, which is when the record was entered into the system.
+    transaction_date = models.DateTimeField(default=timezone.now)
+
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="stock_movements",
+    )
     performed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -163,30 +190,107 @@ class StockMovement(TimeStampedModel):
 # MaterialRequest — a project lead requesting InventoryItems for a project
 # ---------------------------------------------------------------------------
 
+class RequestNumberSequence(models.Model):
+    """
+    Backs auto-generated request numbers like MR-20260731-0001 — one row
+    per calendar day, incremented atomically under a row lock so concurrent
+    submissions on the same day can't collide.
+    """
+    date = models.DateField(unique=True)
+    last_number = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.date} → {self.last_number}"
+
+
 class MaterialRequest(TimeStampedModel):
     class Status(models.TextChoices):
         PENDING = "PENDING", "Pending"
         APPROVED = "APPROVED", "Approved"
         REJECTED = "REJECTED", "Rejected"
-        ISSUED = "ISSUED", "Issued"
+        INVALID = "INVALID", "Invalid"
+
+    request_number = models.CharField(max_length=32, unique=True, editable=False, blank=True)
 
     # Soft reference to the projects app. Swap for a real FK to projects.Project
     # once that model is confirmed — kept decoupled here on purpose.
     project_id = models.UUIDField(null=True, blank=True)
-    project_name = models.CharField(max_length=255, blank=True)
+    project_name = models.CharField(max_length=255, blank=True)  # "project reference"
 
     department = models.CharField(max_length=128, blank=True)
     requested_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name="material_requests",
     )
+    notes = models.TextField(blank=True)  # requester's notes
+
+    # created_at (inherited) doubles as "date/time requested" — no separate
+    # field needed since it's stamped automatically the moment the request
+    # is submitted.
+
     status = models.CharField(
         max_length=16, choices=Status.choices, default=Status.PENDING
     )
-    notes = models.TextField(blank=True)
+    # Populated whichever way the request is resolved — approved, rejected,
+    # or marked invalid. "reviewed" rather than "approved" since this same
+    # trio covers all three outcomes, not just approval.
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="material_requests_reviewed",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_notes = models.TextField(blank=True)  # approver's notes
+
+    # Issuing is a distinct step from approval — often a different person
+    # (e.g. warehouse staff) acting after an approver has signed off.
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="material_requests_issued",
+    )
+    issued_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"Request {self.id} ({self.status})"
+        return f"{self.request_number or self.id} ({self.status})"
+
+    def save(self, *args, **kwargs):
+        if not self.request_number:
+            self.request_number = self._generate_request_number()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_request_number():
+        from django.db import transaction
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        with transaction.atomic():
+            seq, _ = RequestNumberSequence.objects.select_for_update().get_or_create(
+                date=today
+            )
+            seq.last_number += 1
+            seq.save(update_fields=["last_number"])
+            return f"MR-{today.strftime('%Y%m%d')}-{seq.last_number:04d}"
+
+    @property
+    def fulfillment_status(self):
+        """
+        Decoupled from `status` on purpose: a request can be APPROVED and
+        still be NOT_ISSUED, PARTIALLY_ISSUED, or COMPLETED depending on
+        how much of it has actually left the shelf so far.
+        """
+        items = list(self.items.all())
+        if not items:
+            return "NOT_ISSUED"
+        total_authorized = sum(
+            (i.quantity_approved if i.quantity_approved is not None else i.quantity_requested)
+            for i in items
+        )
+        total_issued = sum(i.quantity_issued for i in items)
+        if total_issued <= 0:
+            return "NOT_ISSUED"
+        if total_issued >= total_authorized:
+            return "COMPLETED"
+        return "PARTIALLY_ISSUED"
 
 
 class MaterialRequestItem(models.Model):
@@ -197,6 +301,7 @@ class MaterialRequestItem(models.Model):
     inventory_item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT)
     quantity_requested = models.PositiveIntegerField()
     quantity_approved = models.PositiveIntegerField(null=True, blank=True)
+    quantity_issued = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.quantity_requested} x {self.inventory_item.sku}"

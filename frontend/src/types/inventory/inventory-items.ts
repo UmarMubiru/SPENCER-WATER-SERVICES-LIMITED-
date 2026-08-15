@@ -23,7 +23,13 @@ export interface InventoryItem {
 export type InventoryItemInput = Omit<
   InventoryItem,
   "id" | "quantity" | "status" | "supplierName" | "categoryName" | "createdAt" | "updatedAt"
->;
+> & {
+  // Only meaningful at creation time — records the opening stock as a
+  // real StockMovement rather than setting quantity directly.
+  initialQuantity?: number;
+  movementReason?: "PURCHASE" | "RETURN";
+  transactionDate?: string | null;
+};
 
 export type ListInventoryItemsParams = {
   page: number;

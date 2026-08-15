@@ -17,10 +17,12 @@ export default function ItemTable({ items }: Props) {
             <th className="px-6 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wide text-blue-500">SKU</th>
             <th className="px-6 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wide text-blue-500">Item</th>
             <th className="px-6 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wide text-blue-500">Category</th>
+            <th className="px-6 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wide text-blue-500">Supplier</th>
             <th className="px-6 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wide text-blue-500">Qty</th>
+            <th className="px-6 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wide text-blue-500">Reorder</th>
             <th className="px-6 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wide text-blue-500">Unit</th>
             <th className="px-6 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wide text-blue-500">Status</th>
-            <th className="px-6 py-4" />
+            <th className="px-6 py-3.5" />
           </tr>
         </thead>
         <tbody>
@@ -29,8 +31,10 @@ export default function ItemTable({ items }: Props) {
               <td className="px-6 py-4 font-mono text-[13px] text-blue-900">{item.sku}</td>
               <td className="px-6 py-4 font-medium text-blue-900">{item.name}</td>
               <td className="px-6 py-4 text-blue-700">{item.categoryName || "—"}</td>
+              <td className="px-6 py-4 text-blue-700">{item.supplierName || "—"}</td>
               <td className="px-6 py-4 text-center text-blue-900">{item.quantity}</td>
-              <td className="px-6 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wide text-blue-500">{item.unit}</td>
+              <td className="px-6 py-4 text-center text-blue-700">{item.reorderLevel}</td>
+              <td className="px-6 py-4 text-center text-blue-700">{item.unit}</td>
               <td className="px-6 py-4 text-center">
                 <StatusBadge status={item.status} />
               </td>
@@ -43,7 +47,7 @@ export default function ItemTable({ items }: Props) {
           ))}
           {(!items || items.length === 0) && (
             <tr>
-              <td colSpan={7} className="px-6 py-10 text-center text-blue-400">
+              <td colSpan={9} className="px-6 py-10 text-center text-blue-400">
                 No inventory items found.
               </td>
             </tr>

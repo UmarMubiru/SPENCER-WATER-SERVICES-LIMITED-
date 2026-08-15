@@ -12,13 +12,16 @@ const STYLES: Record<string, string> = {
 
   PENDING: "bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-300",
   APPROVED: "bg-blue-600 text-white",
-  ISSUED: "bg-blue-900 text-white",
   REJECTED: "border border-blue-400 text-blue-500 bg-white",
+  INVALID: "bg-blue-50 text-blue-400 ring-1 ring-inset ring-blue-200 line-through",
+
+  NOT_ISSUED: "border border-blue-300 text-blue-500 bg-white",
+  PARTIALLY_ISSUED: "bg-blue-200 text-blue-900 ring-1 ring-inset ring-blue-300",
+  COMPLETED: "bg-blue-900 text-white",
 
   DRAFT: "bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-200",
   SENT: "bg-blue-300 text-blue-900",
   ACCEPTED: "bg-blue-700 text-white",
-  EXPIRED: "bg-blue-100 text-blue-500 ring-1 ring-inset ring-blue-200",
 
   IN: "bg-blue-100 text-blue-800",
   OUT: "bg-blue-700 text-white",
@@ -32,12 +35,14 @@ const LABELS: Record<string, string> = {
   INACTIVE: "Inactive",
   PENDING: "Pending",
   APPROVED: "Approved",
-  ISSUED: "Issued",
   REJECTED: "Rejected",
+  INVALID: "Invalid",
+  NOT_ISSUED: "Not Issued",
+  PARTIALLY_ISSUED: "Partially Issued",
+  COMPLETED: "Completed",
   DRAFT: "Draft",
   SENT: "Sent",
   ACCEPTED: "Accepted",
-  EXPIRED: "Expired",
   IN: "Stock In",
   OUT: "Stock Out",
 };

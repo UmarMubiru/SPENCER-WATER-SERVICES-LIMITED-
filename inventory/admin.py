@@ -5,6 +5,7 @@ from inventory.models import (
     InventoryItem,
     MaterialRequest,
     MaterialRequestItem,
+    RequestNumberSequence,
     Product,
     SalesQuotation,
     SalesQuotationItem,
@@ -43,8 +44,11 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
-    list_display = ("inventory_item", "movement_type", "quantity", "created_at")
-    list_filter = ("movement_type",)
+    list_display = (
+        "inventory_item", "movement_type", "reason", "quantity",
+        "quantity_before", "quantity_after", "supplier", "transaction_date",
+    )
+    list_filter = ("movement_type", "reason")
 
 
 class MaterialRequestItemInline(admin.TabularInline):
@@ -54,9 +58,17 @@ class MaterialRequestItemInline(admin.TabularInline):
 
 @admin.register(MaterialRequest)
 class MaterialRequestAdmin(admin.ModelAdmin):
-    list_display = ("id", "project_name", "department", "status", "created_at")
+    list_display = (
+        "request_number", "project_name", "department", "requested_by", "status",
+        "reviewed_by", "reviewed_at", "issued_by", "issued_at", "created_at",
+    )
     list_filter = ("status",)
     inlines = [MaterialRequestItemInline]
+
+
+@admin.register(RequestNumberSequence)
+class RequestNumberSequenceAdmin(admin.ModelAdmin):
+    list_display = ("date", "last_number")
 
 
 class SalesQuotationItemInline(admin.TabularInline):

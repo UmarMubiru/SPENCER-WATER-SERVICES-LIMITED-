@@ -13,7 +13,12 @@ export default function RequestsPage() {
 
   return (
     <div className="space-y-6 p-8">
-      <InventoryPageHeader title="Material Requests" description="Project leads requesting inventory items." />
+      <InventoryPageHeader
+        title="Material Requests"
+        description="Project leads requesting inventory items."
+        actionLabel="New Request"
+        actionHref="/admin/inventory/requests/create"
+      />
       {loading ? (
         <div className="p-8 text-blue-400">Loading...</div>
       ) : (

@@ -9,6 +9,9 @@ export interface Product {
   category?: string | null;
   categoryName?: string;
   unit: string;
+  brand?: string;
+  warehouse?: string;
+  image?: string;
   quantity: number;
   reorderLevel: number;
   costPrice: number;

@@ -30,9 +30,9 @@ urlpatterns = [
     # Material requests (project leads requesting InventoryItems)
     path("requests/", views.MaterialRequestListCreateAPIView.as_view(), name="request-list"),
     path("requests/<uuid:pk>/", views.MaterialRequestDetailAPIView.as_view(), name="request-detail"),
-    path("requests/<uuid:pk>/approve/", views.approve_request, name="request-approve"),
-    path("requests/<uuid:pk>/reject/", views.reject_request, name="request-reject"),
-    path("requests/<uuid:pk>/issue/", views.issue_request, name="request-issue"),
+    path("requests/<uuid:pk>/approve/", views.approve_material_request, name="request-approve"),
+    path("requests/<uuid:pk>/reject/", views.reject_material_request, name="request-reject"),
+    #path("requests/<uuid:pk>/issue/", views.issue_request, name="request-issue"),
 
     # Sales Quotations (customer-facing, built from Products).
     # URL kept as /quotations/ intentionally, for continuity with earlier work.

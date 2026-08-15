@@ -84,6 +84,24 @@ class ProductAPITest(APITestCase):
             201,
         )
 
+    def test_create_product_without_supplier_or_category(self):
+        response = self.client.post(
+            "/api/inventory/products/",
+            {
+                "sku": "SKU101",
+                "name": "Pipe",
+                "unit": "pcs",
+                "costPrice": "10.00",
+                "sellingPrice": "15.00",
+                "reorderLevel": 2,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["supplierName"], "")
+        self.assertEqual(response.data["categoryName"], "")
+
     def test_dashboard(self):
 
         Product.objects.create(

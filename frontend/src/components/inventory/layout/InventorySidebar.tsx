@@ -32,16 +32,20 @@ export default function InventorySidebar() {
 
   return (
     <aside
-      className="inventory-sidebar sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto md:block"
+      className="inventory-sidebar sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto font-sans md:block"
       style={{
         background: "linear-gradient(180deg, var(--navy) 0%, var(--blue) 100%)",
       }}
     >
       {/* Brand mark */}
       <div className="flex items-center gap-3 px-5 pb-5 pt-7">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/15 ring-1 ring-sky-300/30">
-          <Droplet size={18} className="text-sky-300" fill="currentColor" fillOpacity={0.25} />
-        </span>
+        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white/95 shadow-sm ring-1 ring-sky-200/70">
+          <img
+            src="/sws-logo-current.png"
+            alt="Spencer Water Services logo"
+            className="h-10 w-10 object-contain"
+          />
+        </div>
         <div className="leading-tight">
           <p className="font-serif text-[15px] uppercase font-bold text-white">Spencer</p>
           <p className="text-[11px] uppercase font-semibold tracking-wider text-white">Water Services</p>

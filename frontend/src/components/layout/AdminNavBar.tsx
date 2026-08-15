@@ -20,9 +20,13 @@ export default function AdminNavbar() {
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-9">
           <Link href="/admin/dashboard" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-              <Droplet size={15} className="text-white" fill="currentColor" fillOpacity={0.3} />
-            </span>
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 shadow-sm ring-1 ring-blue-200">
+              <img
+                src="/sws-logo-current.png"
+                alt="Spencer Water Services logo"
+                className="h-8 w-8 object-contain"
+              />
+            </div>
             <span className="font-serif text-[15px] font-semibold text-blue-950">
               Spencer&nbsp;Water
             </span>

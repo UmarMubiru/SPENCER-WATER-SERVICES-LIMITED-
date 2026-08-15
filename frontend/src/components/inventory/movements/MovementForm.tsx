@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { StockMovementInput, MovementType } from "@/types/inventory/movement";
+import { StockMovementInput, MovementType, MovementReason } from "@/types/inventory/movement";
 import { useInventoryItems } from "@/hooks/inventory/useInventoryItems";
+import { useSuppliers } from "@/hooks/inventory/useSuppliers";
 
 interface Props {
   onSubmit: (data: StockMovementInput) => Promise<void>;
@@ -12,17 +13,35 @@ const inputClass =
   "w-full rounded-lg border border-blue-200 px-4 py-2 text-blue-900 placeholder:text-blue-300 focus:border-blue-500 focus:outline-none";
 const labelClass = "mb-1 block text-sm font-medium text-blue-700";
 
+const REASON_OPTIONS: { value: MovementReason; label: string }[] = [
+  { value: "PURCHASE", label: "Purchase" },
+  { value: "RETURN", label: "Return" },
+  { value: "ADJUSTMENT", label: "Adjustment" },
+  { value: "DAMAGED", label: "Damaged / Written Off" },
+  { value: "OTHER", label: "Other" },
+];
+
+function nowForInput() {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 export default function MovementForm({ onSubmit }: Props) {
   const { items } = useInventoryItems({ page: 1 });
+  const { suppliers } = useSuppliers({ page: 1 });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<StockMovementInput>({
     inventoryItem: "",
     movementType: "IN" as MovementType,
-    quantity: 1,
-    reason: "",
+    reason: "PURCHASE",
+    notes: "",
     reference: "",
+    quantity: 1,
+    transactionDate: nowForInput(),
+    supplier: "",
   });
 
   function update<K extends keyof StockMovementInput>(key: K, value: StockMovementInput[K]) {
@@ -105,12 +124,39 @@ export default function MovementForm({ onSubmit }: Props) {
 
         <div>
           <label className={labelClass}>Reason</label>
-          <input
+          <select
             value={form.reason}
-            onChange={(e) => update("reason", e.target.value)}
-            placeholder="e.g. Restock, damaged goods"
+            onChange={(e) => update("reason", e.target.value as MovementReason)}
+            className={inputClass}
+          >
+            {REASON_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={labelClass}>Date / Time</label>
+          <input
+            type="datetime-local"
+            value={form.transactionDate ?? ""}
+            onChange={(e) => update("transactionDate", e.target.value)}
             className={inputClass}
           />
+        </div>
+
+        <div>
+          <label className={labelClass}>Supplier (optional)</label>
+          <select
+            value={form.supplier ?? ""}
+            onChange={(e) => update("supplier", e.target.value)}
+            className={inputClass}
+          >
+            <option value="">— None —</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -119,6 +165,16 @@ export default function MovementForm({ onSubmit }: Props) {
             value={form.reference}
             onChange={(e) => update("reference", e.target.value)}
             placeholder="e.g. PO number"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={labelClass}>Notes</label>
+          <input
+            value={form.notes}
+            onChange={(e) => update("notes", e.target.value)}
+            placeholder="Any extra detail"
             className={inputClass}
           />
         </div>

@@ -86,21 +86,21 @@ urlpatterns = [
 
     path(
         "material-requests/<uuid:pk>/approve/",
-        approve_request,
+        approve_material_request,
         name="materialrequest-approve",
     ),
 
     path(
         "material-requests/<uuid:pk>/reject/",
-        reject_request,
+        reject_material_request,
         name="materialrequest-reject",
     ),
 
-    path(
-        "material-requests/<uuid:pk>/issue/",
-        issue_request,
-        name="materialrequest-issue",
-    ),
+    # path(
+    #     "material-requests/<uuid:pk>/issue/",
+    #     issue_material_request,
+    #     name="materialrequest-issue",
+    # ),
 
     # Sales Quotations
     path(
