@@ -5,6 +5,8 @@ __pycache__/
 .env
 db.sqlite3
 media/
+!frontend/src/app/admin/content/media/
+!frontend/src/app/admin/content/media/page.tsx
 .DS_Store
 frontend/node_modules/
 frontend/.next/

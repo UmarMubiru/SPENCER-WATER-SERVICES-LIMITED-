@@ -82,9 +82,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'core',
+    'content',
     'leads',
     'quotations',
-    'portfolio',
     'blog',
     'testimonials',
     'inventory',
@@ -97,6 +99,9 @@ INSTALLED_APPS = [
     'services',
     'core_pages',
     'version_history',
+    'notifications',
+    'finance',
+    'analytics',
 ]
 
 MIDDLEWARE = [
@@ -106,6 +111,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'reports.middleware.SystemActivityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -162,7 +168,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Kampala'
 
 USE_I18N = True
 
@@ -182,12 +188,45 @@ CORS_ALLOWED_ORIGINS = env_list(
     'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001',
 )
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = ['*']
+CORS_ALLOW_METHODS = ['*']
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+
 CSRF_TRUSTED_ORIGINS = env_list(
     'CSRF_TRUSTED_ORIGINS',
     'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001',
 )
 
 CORS_ALLOW_CREDENTIALS = True
+
+# JWT Settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': lambda user: user.is_authenticated,
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.tokens.TokenUser',
+    'JTI_CLAIM': 'jti',
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -196,7 +235,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.AllowAny',  # Allow unauthenticated access for development
     ],
 }
 
@@ -212,15 +251,10 @@ SIMPLE_JWT = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Mailgun SMTP credentials belong in .env; the console backend keeps local
+# Mailgun API credentials belong in .env; the console backend keeps local
 # development safe and lets admins copy a setup link while email is unconfigured.
-MAILGUN_SMTP_LOGIN = os.getenv('MAILGUN_SMTP_LOGIN', '')
-MAILGUN_SMTP_PASSWORD = os.getenv('MAILGUN_SMTP_PASSWORD', '')
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' if MAILGUN_SMTP_LOGIN and MAILGUN_SMTP_PASSWORD else 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = os.getenv('MAILGUN_SMTP_HOST', 'smtp.mailgun.org')
-EMAIL_PORT = int(os.getenv('MAILGUN_SMTP_PORT', '587'))
-EMAIL_HOST_USER = MAILGUN_SMTP_LOGIN
-EMAIL_HOST_PASSWORD = MAILGUN_SMTP_PASSWORD
-EMAIL_USE_TLS = True
+MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY', '')
+MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN', '')
+MAILGUN_BASE_URL = os.getenv('MAILGUN_BASE_URL', 'https://api.mailgun.net/v3')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Spencer Water Services <noreply@localhost>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:3000').rstrip('/')

@@ -18,19 +18,26 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from core import search_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/search/', search_views.global_search, name='global_search'),
     path('api/employees/', include('employees.urls')),
     path('api/users/', include('users.urls')),
     path('api/roles/', include('roles.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/inventory/', include('inventory.urls')),
     path('api/reports/', include('reports.urls')),
+    path('api/activity-log/', include('core.urls_app')),
     path('api/content/blog/', include('blog.urls')),
     path('api/content/testimonials/', include('testimonials.urls')),
-    path('api/content/portfolio/', include('portfolio.urls')),
     path('api/content/services/', include('services.urls')),
     path('api/content/core-pages/', include('core_pages.urls')),
     path('api/content/version-history/', include('version_history.urls')),
+    path('api/content/', include('content.urls')),
+    path('api/quotations/', include('quotations.urls')),
+    path('api/notifications/', include('notifications.urls')),
+    path('api/finance/', include('finance.urls')),
+    path('api/analytics/', include('analytics.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,14 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { AdminLayout } from '../../components/AdminLayout';
+
+type Project = { id: string; name: string; project_reference: string; completion_percentage: number; status: string };
+const listFrom = <T,>(data: unknown): T[] => Array.isArray(data) ? data as T[] : data && typeof data === 'object' && Array.isArray((data as { results?: unknown }).results) ? (data as { results: T[] }).results : [];
+
+export default function ActivitiesDashboardPage() {
+  const [projects, setProjects] = useState<Project[]>([]); const [projectId, setProjectId] = useState('');
+  useEffect(() => { fetch('http://127.0.0.1:8000/api/projects/').then(async (response) => { if (response.ok) setProjects(listFrom<Project>(await response.json())); }); }, []);
+  return <AdminLayout title="Project Activities" subtitle="Create and monitor activities by project" activePath="/admin/projects/activities"><div className="p-6 space-y-6"><div className="flex gap-3"><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="border rounded-lg px-3 py-2 min-w-64"><option value="">Select project for a new activity</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.project_reference} — {project.name}</option>)}</select><Link href={projectId ? `/admin/projects/activities/${projectId}` : '#'} onClick={(event) => !projectId && event.preventDefault()} className="px-4 py-2 bg-green-600 text-white rounded-lg">+ Add Activity</Link></div><section className="bg-white border rounded-xl overflow-hidden"><div className="p-5 border-b"><h2 className="text-lg font-semibold">Project Progress</h2><p className="text-sm text-gray-500">Progress is calculated from each project’s activities. Select a project to view its activity table.</p></div><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-gray-50 text-left text-gray-500"><tr><th className="p-4">Project</th><th className="p-4">Progress</th><th className="p-4">Status</th><th className="p-4"></th></tr></thead><tbody>{projects.map((project) => <tr key={project.id} className="border-t"><td className="p-4"><div className="font-medium">{project.name}</div><div className="text-xs text-gray-500">{project.project_reference}</div></td><td className="p-4 min-w-48"><div className="flex gap-2 items-center"><div className="flex-1 h-2 rounded-full bg-gray-200"><div className="h-2 rounded-full bg-blue-600" style={{ width: `${project.completion_percentage}%` }} /></div><b>{project.completion_percentage}%</b></div></td><td className="p-4">{project.status.replace('_', ' ')}</td><td className="p-4"><Link href={`/admin/projects/activities/${project.id}`} className="text-blue-600 hover:underline">View activities</Link></td></tr>)}</tbody></table></div></section></div></AdminLayout>;
+}

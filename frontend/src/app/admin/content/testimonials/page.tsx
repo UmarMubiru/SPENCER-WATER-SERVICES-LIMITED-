@@ -1,407 +1,459 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Sidebar } from '../../components/Sidebar';
-import { Topbar } from '../../components/Topbar';
+import { useState, useEffect } from 'react';
+import { Star, MessageSquare, Check, X, Trash2, Edit2, Plus, Search, Filter, Award } from 'lucide-react';
+import { AdminLayout } from '../../components/AdminLayout';
 
-interface Testimonial {
-  id: string;
-  visitor_name: string;
-  company_name?: string;
+type Testimonial = {
+  id: number;
+  customer_name: string;
+  company_name: string;
+  rating: number;
   content: string;
-  rating?: number;
-  status: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
-  reviewed_by?: string;
-  reviewed_at?: string;
-  submitted_at: string;
-}
+  project_reference: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+  is_featured: boolean;
+};
+
+const API = 'http://127.0.0.1:8000/api/testimonials/';
 
 export default function TestimonialsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [filteredTestimonials, setFilteredTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
-  const [filters, setFilters] = useState({
-    status: 'PENDING_REVIEW',
-    search: '',
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
+  const [form, setForm] = useState({
+    customer_name: '',
+    company_name: '',
+    rating: 5,
+    content: '',
+    project_reference: '',
+    is_featured: false,
   });
 
-  useEffect(() => {
-    fetchTestimonials();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [testimonials, filters]);
-
-  const applyFilters = () => {
-    let filtered = [...testimonials];
-    
-    if (filters.status) {
-      filtered = filtered.filter(t => t.status === filters.status);
-    }
-    
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      filtered = filtered.filter(t => 
-        t.visitor_name.toLowerCase().includes(search) ||
-        (t.company_name && t.company_name.toLowerCase().includes(search)) ||
-        t.content.toLowerCase().includes(search)
-      );
-    }
-    
-    setFilteredTestimonials(filtered);
+  const load = () => {
+    setLoading(true);
+    fetch(API)
+      .then(r => r.json())
+      .then(d => setTestimonials(d.testimonials || []))
+      .catch(() => setTestimonials([]))
+      .finally(() => setLoading(false));
   };
 
-  const fetchTestimonials = async () => {
+  useEffect(load, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const method = editingTestimonial ? 'PATCH' : 'POST';
+    const url = editingTestimonial ? `${API}${editingTestimonial.id}/` : API;
+
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/content/testimonials/');
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
       if (response.ok) {
-        const data = await response.json();
-        setTestimonials(Array.isArray(data) ? data : []);
+        setShowModal(false);
+        setEditingTestimonial(null);
+        setForm({
+          customer_name: '',
+          company_name: '',
+          rating: 5,
+          content: '',
+          project_reference: '',
+          is_featured: false,
+        });
+        load();
+      } else {
+        alert('Failed to save testimonial');
       }
     } catch (error) {
-      console.error('Error fetching testimonials:', error);
-    } finally {
-      setLoading(false);
+      alert('Failed to save testimonial');
     }
   };
 
-  const handleApprove = async (testimonial: Testimonial) => {
+  const updateStatus = async (testimonial: Testimonial, status: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/content/testimonials/${testimonial.id}/`, {
+      const response = await fetch(`${API}${testimonial.id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'APPROVED' }),
+        body: JSON.stringify({ status }),
       });
-      
-      if (response.ok) {
-        fetchTestimonials();
-      } else {
-        alert('Error approving testimonial');
-      }
+      if (response.ok) load();
     } catch (error) {
-      console.error('Error approving testimonial:', error);
-      alert('Error approving testimonial');
+      alert('Failed to update status');
     }
   };
 
-  const handleReject = async (testimonial: Testimonial) => {
-    if (!confirm('Are you sure you want to reject this testimonial?')) return;
-    
+  const toggleFeatured = async (testimonial: Testimonial) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/content/testimonials/${testimonial.id}/`, {
+      const response = await fetch(`${API}${testimonial.id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'REJECTED' }),
+        body: JSON.stringify({ is_featured: !testimonial.is_featured }),
       });
-      
-      if (response.ok) {
-        fetchTestimonials();
-      } else {
-        alert('Error rejecting testimonial');
-      }
+      if (response.ok) load();
     } catch (error) {
-      console.error('Error rejecting testimonial:', error);
-      alert('Error rejecting testimonial');
+      alert('Failed to update featured status');
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const deleteTestimonial = async (id: number) => {
     if (!confirm('Are you sure you want to delete this testimonial?')) return;
-    
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/content/testimonials/${id}/`, {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        fetchTestimonials();
-      } else {
-        alert('Error deleting testimonial');
-      }
+      const response = await fetch(`${API}${id}/`, { method: 'DELETE' });
+      if (response.ok) load();
+      else alert('Failed to delete testimonial');
     } catch (error) {
-      console.error('Error deleting testimonial:', error);
-      alert('Error deleting testimonial');
+      alert('Failed to delete testimonial');
     }
   };
 
-  const openDetailsModal = (testimonial: Testimonial) => {
-    setSelectedTestimonial(testimonial);
-    setShowDetailsModal(true);
+  const openEditModal = (testimonial: Testimonial) => {
+    setEditingTestimonial(testimonial);
+    setForm({
+      customer_name: testimonial.customer_name,
+      company_name: testimonial.company_name,
+      rating: testimonial.rating,
+      content: testimonial.content,
+      project_reference: testimonial.project_reference,
+      is_featured: testimonial.is_featured,
+    });
+    setShowModal(true);
   };
 
-  const stats = [
-    { label: 'Total Testimonials', value: testimonials.length, color: 'blue' },
-    { label: 'Pending Review', value: testimonials.filter(t => t.status === 'PENDING_REVIEW').length, color: 'red' },
-    { label: 'Approved', value: testimonials.filter(t => t.status === 'APPROVED').length, color: 'green' },
-    { label: 'Rejected', value: testimonials.filter(t => t.status === 'REJECTED').length, color: 'gray' },
-  ];
+  const visible = testimonials.filter(t => {
+    const matchesFilter = filter === 'ALL' || t.status === filter;
+    const matchesSearch = searchQuery === '' ||
+      t.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.content.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  const stats = {
+    total: testimonials.length,
+    pending: testimonials.filter(t => t.status === 'PENDING').length,
+    approved: testimonials.filter(t => t.status === 'APPROVED').length,
+    featured: testimonials.filter(t => t.is_featured).length,
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <Star
+        key={i}
+        size={16}
+        className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+      />
+    ));
+  };
 
   return (
-    <div className="min-h-screen flex" style={{
-      background: 'radial-gradient(circle at 14% 12%, rgba(0, 149, 190, 0.28), transparent 28%), radial-gradient(circle at 86% 18%, rgba(30, 99, 184, 0.22), transparent 30%), linear-gradient(135deg, #eef8ff 0%, #d8ecfb 38%, #f6f9fe 100%)',
-      backgroundAttachment: 'fixed'
-    }}>
-      <Sidebar activePath="/admin/content/dashboard" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Testimonials"
-          subtitle="Review and manage customer feedback"
-          onSearch={(q) => setFilters(prev => ({ ...prev, search: q }))}
-        />
-
-        <div className="p-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            {stats.map((stat, index) => {
-              const colorClasses = {
-                blue: { bg: 'bg-blue-50', valueColor: 'text-blue-700' },
-                green: { bg: 'bg-green-50', valueColor: 'text-green-700' },
-                red: { bg: 'bg-red-50', valueColor: 'text-red-700' },
-                gray: { bg: 'bg-gray-50', valueColor: 'text-gray-700' },
-              };
-              const colors = colorClasses[stat.color as keyof typeof colorClasses];
-              
-              return (
-                <div key={index} className={`${colors.bg} rounded-xl p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow`} onClick={() => {
-                  if (stat.label === 'Pending Review') {
-                    setFilters(prev => ({ ...prev, status: 'PENDING_REVIEW' }));
-                  } else if (stat.label === 'Approved') {
-                    setFilters(prev => ({ ...prev, status: 'APPROVED' }));
-                  } else if (stat.label === 'Rejected') {
-                    setFilters(prev => ({ ...prev, status: 'REJECTED' }));
-                  } else {
-                    setFilters(prev => ({ ...prev, status: '' }));
-                  }
-                }}>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
-                  <p className={`text-3xl font-bold ${colors.valueColor}`}>{stat.value}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Testimonials Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Testimonials</h2>
-              </div>
-              
-              {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">All Status</option>
-                    <option value="PENDING_REVIEW">Pending Review</option>
-                    <option value="APPROVED">Approved</option>
-                    <option value="REJECTED">Rejected</option>
-                  </select>
-                </div>
-              </div>
+    <AdminLayout
+      title="Testimonials"
+      subtitle="Manage customer reviews and testimonials"
+      activePath="/admin/content/testimonials"
+    >
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">Total</span>
+              <MessageSquare size={18} className="text-[#1e63b8]" />
             </div>
-            
-            {loading ? (
-              <div className="p-6 text-center text-gray-500">Loading testimonials...</div>
-            ) : filteredTestimonials.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No testimonials found matching your filters.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Customer</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Company</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Rating</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Content</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Submitted</th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTestimonials.map((testimonial) => (
-                      <tr key={testimonial.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-4 px-6 font-medium text-gray-900">{testimonial.visitor_name}</td>
-                        <td className="py-4 px-6 text-gray-700">{testimonial.company_name || 'N/A'}</td>
-                        <td className="py-4 px-6">
-                          {testimonial.rating ? (
-                            <span className="text-yellow-500">{'⭐'.repeat(testimonial.rating)}</span>
-                          ) : (
-                            <span className="text-gray-400">N/A</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6">
-                          <p className="text-gray-700 line-clamp-2 max-w-md">{testimonial.content}</p>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            testimonial.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                            testimonial.status === 'PENDING_REVIEW' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {testimonial.status.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-gray-700">
-                          {new Date(testimonial.submitted_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openDetailsModal(testimonial)}
-                              className="text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              View
-                            </button>
-                            {testimonial.status === 'PENDING_REVIEW' && (
-                              <>
-                                <button
-                                  onClick={() => handleApprove(testimonial)}
-                                  className="text-green-600 hover:text-green-800 font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject(testimonial)}
-                                  className="text-red-600 hover:text-red-800 font-medium"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => handleDelete(testimonial.id)}
-                              className="text-red-600 hover:text-red-800 font-medium"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <strong className="mt-4 block text-3xl text-[#10243d]">{stats.total}</strong>
+            <span className="mt-1 block text-xs text-slate-500">All testimonials</span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">Pending</span>
+              <Filter size={18} className="text-amber-500" />
+            </div>
+            <strong className="mt-4 block text-3xl text-[#10243d]">{stats.pending}</strong>
+            <span className="mt-1 block text-xs text-slate-500">Awaiting review</span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">Approved</span>
+              <Check size={18} className="text-emerald-500" />
+            </div>
+            <strong className="mt-4 block text-3xl text-[#10243d]">{stats.approved}</strong>
+            <span className="mt-1 block text-xs text-slate-500">Published reviews</span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">Featured</span>
+              <Award size={18} className="text-purple-500" />
+            </div>
+            <strong className="mt-4 block text-3xl text-[#10243d]">{stats.featured}</strong>
+            <span className="mt-1 block text-xs text-slate-500">Highlighted reviews</span>
           </div>
         </div>
-      </div>
 
-      {/* Testimonial Details Modal */}
-      {showDetailsModal && selectedTestimonial && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Testimonial Details</h3>
+        {/* Header with Add Button */}
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm text-slate-500">Review and manage customer testimonials. Approve pending reviews to display them on your website.</p>
+          </div>
+          <button
+            onClick={() => {
+              setEditingTestimonial(null);
+              setForm({
+                customer_name: '',
+                company_name: '',
+                rating: 5,
+                content: '',
+                project_reference: '',
+                is_featured: false,
+              });
+              setShowModal(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1e63b8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1a5699]"
+          >
+            <Plus size={17} />Add Testimonial
+          </button>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex gap-2">
+            {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(status => (
               <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                key={status}
+                onClick={() => setFilter(status as any)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  filter === status
+                    ? 'bg-[#1e63b8] text-white'
+                    : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                }`}
               >
-                ✕
+                {status === 'ALL' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}
               </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Customer Name</p>
-                <p className="text-gray-900">{selectedTestimonial.visitor_name}</p>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <Search size={16} className="text-slate-400" />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-transparent text-sm outline-none"
+                placeholder="Search testimonials..."
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Testimonials List */}
+        {loading ? (
+          <p className="py-16 text-center text-slate-500">Loading testimonials...</p>
+        ) : visible.length === 0 ? (
+          <p className="py-16 text-center text-slate-500">No testimonials found</p>
+        ) : (
+          <div className="space-y-4">
+            {visible.map(testimonial => (
+              <div
+                key={testimonial.id}
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-semibold text-[#10243d]">{testimonial.customer_name}</h3>
+                      {testimonial.is_featured && (
+                        <span className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                          <Award size={12} />Featured
+                        </span>
+                      )}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          testimonial.status === 'APPROVED'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : testimonial.status === 'PENDING'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {testimonial.status.charAt(0) + testimonial.status.slice(1).toLowerCase()}
+                      </span>
+                    </div>
+                    {testimonial.company_name && (
+                      <p className="text-sm text-slate-600">{testimonial.company_name}</p>
+                    )}
+                    <div className="mt-2 flex items-center gap-1">
+                      {renderStars(testimonial.rating)}
+                    </div>
+                    <p className="mt-3 text-sm text-slate-700">{testimonial.content}</p>
+                    {testimonial.project_reference && (
+                      <p className="mt-2 text-xs text-slate-500">Project: {testimonial.project_reference}</p>
+                    )}
+                    <p className="mt-2 text-xs text-slate-400">
+                      {new Date(testimonial.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {testimonial.status === 'PENDING' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateStatus(testimonial, 'APPROVED')}
+                          className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                        >
+                          <Check size={14} />Approve
+                        </button>
+                        <button
+                          onClick={() => updateStatus(testimonial, 'REJECTED')}
+                          className="flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                        >
+                          <X size={14} />Reject
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => toggleFeatured(testimonial)}
+                        className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                          testimonial.is_featured
+                            ? 'bg-purple-600 text-white hover:bg-purple-700'
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        }`}
+                      >
+                        <Award size={14} />
+                        {testimonial.is_featured ? 'Unfeature' : 'Feature'}
+                      </button>
+                      <button
+                        onClick={() => openEditModal(testimonial)}
+                        className="flex items-center gap-1 rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300"
+                      >
+                        <Edit2 size={14} />Edit
+                      </button>
+                      <button
+                        onClick={() => deleteTestimonial(testimonial.id)}
+                        className="flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200"
+                      >
+                        <Trash2 size={14} />Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              {selectedTestimonial.company_name && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Company</p>
-                  <p className="text-gray-900">{selectedTestimonial.company_name}</p>
-                </div>
-              )}
-              
-              {selectedTestimonial.rating && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Rating</p>
-                  <p className="text-yellow-500">{'⭐'.repeat(selectedTestimonial.rating)}</p>
-                </div>
-              )}
-              
-              <div>
-                <p className="text-sm font-medium text-gray-500">Content</p>
-                <p className="text-gray-700 mt-1">{selectedTestimonial.content}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    selectedTestimonial.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                    selectedTestimonial.status === 'PENDING_REVIEW' ? 'bg-red-100 text-red-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {selectedTestimonial.status.replace('_', ' ')}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Submitted</p>
-                  <p className="text-gray-700">{new Date(selectedTestimonial.submitted_at).toLocaleString()}</p>
-                </div>
-              </div>
-              
-              {selectedTestimonial.reviewed_by && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Reviewed By</p>
-                  <p className="text-gray-700">{selectedTestimonial.reviewed_by}</p>
-                </div>
-              )}
-              
-              {selectedTestimonial.reviewed_at && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Reviewed At</p>
-                  <p className="text-gray-700">{new Date(selectedTestimonial.reviewed_at).toLocaleString()}</p>
-                </div>
-              )}
-              
-              <div className="flex gap-3 pt-4 border-t">
-                {selectedTestimonial.status === 'PENDING_REVIEW' && (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleApprove(selectedTestimonial);
-                        setShowDetailsModal(false);
-                      }}
-                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleReject(selectedTestimonial);
-                        setShowDetailsModal(false);
-                      }}
-                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => {
-                    handleDelete(selectedTestimonial.id);
-                    setShowDetailsModal(false);
-                  }}
-                  className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Delete
+            ))}
+          </div>
+        )}
+
+        {/* Add/Edit Modal */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowModal(false)}>
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {editingTestimonial ? 'Edit Testimonial' : 'Add Testimonial'}
+                </h3>
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <X size={20} />
                 </button>
               </div>
+              <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={form.customer_name}
+                      onChange={e => setForm({ ...form, customer_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <input
+                      type="text"
+                      value={form.company_name}
+                      onChange={e => setForm({ ...form, company_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Acme Inc."
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rating *</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setForm({ ...form, rating: star })}
+                        className="p-1 hover:scale-110 transition-transform"
+                      >
+                        <Star
+                          size={24}
+                          className={star <= form.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                        />
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm text-slate-600">{form.rating} stars</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Testimonial Content *</label>
+                  <textarea
+                    required
+                    value={form.content}
+                    onChange={e => setForm({ ...form, content: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    placeholder="What did the customer say about your service?"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Reference</label>
+                  <input
+                    type="text"
+                    value={form.project_reference}
+                    onChange={e => setForm({ ...form, project_reference: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Related project name"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    checked={form.is_featured}
+                    onChange={e => setForm({ ...form, is_featured: e.target.checked })}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="featured" className="text-sm text-gray-700">Feature this testimonial</label>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    {editingTestimonial ? 'Update' : 'Create'} Testimonial
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminLayout>
   );
 }

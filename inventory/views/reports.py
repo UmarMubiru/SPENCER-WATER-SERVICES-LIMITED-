@@ -1,0 +1,36 @@
+from rest_framework.permissions import (
+    IsAuthenticated,
+)
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from inventory.permissions import (
+    IsInventoryUser,
+)
+
+from inventory.services.report_service import (
+    ReportService,
+)
+
+
+class InventoryReportAPIView(APIView):
+
+    permission_classes = [
+        IsAuthenticated,
+        IsInventoryUser,
+    ]
+
+    def get(self, request):
+
+        return Response({
+
+            "inventory":
+            ReportService.inventory_summary(),
+
+            "suppliers":
+            ReportService.supplier_summary(),
+
+            "movements":
+            ReportService.movement_summary(),
+
+        })

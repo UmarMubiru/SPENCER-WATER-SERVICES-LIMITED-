@@ -1,27 +1,41 @@
 export interface Employee {
   id: number;
-  employee_id: string;
-  first_name: string;
-  last_name: string;
   full_name: string;
-  email: string;
   phone: string;
-  address?: string;
-  department_name: string;
-  job_title_name: string;
-  employment_type_name: string;
-  status: 'active' | 'on_leave' | 'suspended' | 'exited';
-  joining_date: string;
-  contract_expiry?: string;
-  contract_status?: string;
-  profile_picture?: string;
+  email: string;
+  national_id?: string;
+  employee_type: 'permanent' | 'temporary';
+  department: number;
+  department_name?: string;
+  job_title?: string;
+  salary?: number;
+  wage_rate?: number;
+  contract_start_date?: string;
+  contract_end_date?: string;
+  status: 'not_active' | 'active_assigned' | 'active_not_assigned';
   created_at: string;
   updated_at: string;
 }
 
+export interface PermanentEmployee extends Employee {
+  employee_type: 'permanent';
+  job_title: string;
+  salary?: number;
+}
+
+export interface TemporaryEmployee extends Employee {
+  employee_type: 'temporary';
+  wage_rate?: number;
+  contract_start_date?: string;
+  contract_end_date?: string;
+}
+
 export interface DashboardStats {
   total_employees: number;
+  total_permanent: number;
+  total_temporary: number;
   active_employees: number;
+  assigned_temporary: number;
   on_contract: number;
   exited: number;
   contracts_expiring_soon: number;

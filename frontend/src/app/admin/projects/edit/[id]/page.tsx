@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { Sidebar } from '../../../components/Sidebar';
 import { Topbar } from '../../../components/Topbar';
 import Link from 'next/link';
@@ -24,8 +24,9 @@ interface Project {
   priority: string;
 }
 
-export default function EditProjectPage() {
-  const params = useParams();
+export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = use(params);
+  const projectId = unwrappedParams.id;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -48,11 +49,11 @@ export default function EditProjectPage() {
 
   useEffect(() => {
     fetchProject();
-  }, [params.id]);
+  }, [projectId]);
 
   const fetchProject = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/projects/${params.id}/`);
+      const response = await fetch(`http://127.0.0.1:8000/api/projects/${projectId}/`);
       if (response.ok) {
         const data = await response.json();
         setFormData({
@@ -87,7 +88,7 @@ export default function EditProjectPage() {
     setSubmitting(true);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/projects/${params.id}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/projects/${projectId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ export default function EditProjectPage() {
       });
 
       if (response.ok) {
-        router.push(`/admin/projects/details/${params.id}`);
+        router.push(`/admin/projects/details/${projectId}`);
       } else {
         const error = await response.json();
         alert('Error updating project: ' + JSON.stringify(error));
@@ -137,19 +138,21 @@ export default function EditProjectPage() {
       backgroundAttachment: 'fixed'
     }}>
       <Sidebar activePath="/admin/projects/dashboard" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Edit Project"
-          subtitle="Update project details"
-          onSearch={(q) => console.log('Search:', q)}
-        />
+      <div className="flex-1 ml-64 h-screen overflow-hidden flex flex-col">
+        <div className="flex-shrink-0">
+          <Topbar
+            title="Edit Project"
+            subtitle="Update project details"
+            onSearch={(q) => console.log('Search:', q)}
+          />
+        </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Edit Project</h2>
-                <Link href={`/admin/projects/details/${params.id}`} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                <Link href={`/admin/projects/details/${projectId}`} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                   Cancel
                 </Link>
               </div>
@@ -341,7 +344,7 @@ export default function EditProjectPage() {
 
               <div className="mt-6 flex justify-end gap-3">
                 <Link
-                  href={`/admin/projects/details/${params.id}`}
+                  href={`/admin/projects/details/${projectId}`}
                   className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   Cancel

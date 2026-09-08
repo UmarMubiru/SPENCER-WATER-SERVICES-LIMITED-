@@ -22,14 +22,16 @@ export default function SettingsDashboardPage() {
       backgroundAttachment: 'fixed'
     }}>
       <Sidebar activePath="/admin/settings/dashboard" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Settings"
-          subtitle="Configure your account and system preferences"
-          onSearch={(q) => console.log('Search settings:', q)}
-        />
+      <div className="flex-1 ml-64 h-screen overflow-hidden flex flex-col">
+        <div className="flex-shrink-0">
+          <Topbar
+            title="Settings"
+            subtitle="Configure your account and system preferences"
+            onSearch={(q) => console.log('Search settings:', q)}
+          />
+        </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Settings Navigation */}
             <div className="bg-white rounded-xl border border-gray-200 p-4">

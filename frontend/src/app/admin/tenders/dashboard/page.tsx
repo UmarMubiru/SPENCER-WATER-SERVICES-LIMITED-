@@ -28,14 +28,16 @@ export default function TendersDashboardPage() {
       backgroundAttachment: 'fixed'
     }}>
       <Sidebar activePath="/admin/tenders/dashboard" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Tender Management"
-          subtitle="Manage tender opportunities, bids, and contract tracking"
-          onSearch={(q) => setSearchQuery(q)}
-        />
+      <div className="flex-1 ml-64 h-screen overflow-hidden flex flex-col">
+        <div className="flex-shrink-0">
+          <Topbar
+            title="Tender Management"
+            subtitle="Manage tender opportunities, bids, and contract tracking"
+            onSearch={(q) => setSearchQuery(q)}
+          />
+        </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {stats.map((stat, index) => {

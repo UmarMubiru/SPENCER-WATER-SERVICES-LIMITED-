@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SWS Ltd — Quotation Template</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --blue-deep:   #0F5FA8;
+    --blue:        #1878C4;
+    --blue-bright: #29ABE2;
+    --ink:         #14181D;
+    --slate:       #5B6672;
+    --hairline:    #E1E7EC;
+    --wash:        #F3F8FB;
+    --paper:       #FFFFFF;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    padding:40px 0;
+    background:#DDE4E9;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* ============ PAGE ============ */
+  .page{
+    width:210mm;
+    min-height:297mm;
+    margin:0 auto;
+    background:var(--paper);
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 8px 40px rgba(15,40,60,.18);
+  }
+
+  /* watermark droplet — the one signature flourish, kept quiet */
+  .watermark{
+    position:absolute;
+    right:-70px; bottom:170px;
+    width:420px; height:420px;
+    opacity:.035;
+    z-index:0;
+    pointer-events:none;
+  }
+
+  /* ============ HEADER ============ */
+  .header{
+    position:relative;
+    background:linear-gradient(135deg,var(--blue-deep) 0%, var(--blue) 62%, var(--blue-bright) 100%);
+    padding:34px 44px 26px;
+    color:#fff;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .header::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:0;
+    height:4px;
+    background:repeating-linear-gradient(90deg,#ffffff55 0 14px, transparent 14px 26px);
+  }
+  .brand{ display:flex; align-items:center; gap:16px; }
+  .brand .mark{
+    width:58px; height:58px;
+    background:#fff;
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .brand .mark svg{ width:38px; height:38px; }
+  .brand .name{ line-height:1.15; }
+  .brand .name .big{
+    font-family:'Manrope',sans-serif;
+    font-weight:800;
+    font-size:20px;
+    letter-spacing:.5px;
+  }
+  .brand .name .small{
+    font-size:11px;
+    letter-spacing:2px;
+    opacity:.85;
+    margin-top:2px;
+  }
+  .header-contact{
+    text-align:right;
+    font-size:11px;
+    line-height:1.7;
+    opacity:.92;
+  }
+  .header-contact strong{ display:block; font-size:12px; letter-spacing:.3px; margin-bottom:2px; opacity:1; }
+
+  /* ============ TITLE STRIP ============ */
+  .title-strip{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    padding:26px 44px 18px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .title-strip .doc-title{
+    font-family:'Manrope',sans-serif;
+    font-weight:800;
+    font-size:30px;
+    letter-spacing:.5px;
+    color:var(--ink);
+  }
+  .title-strip .doc-title span{ color:var(--blue); }
+  .title-strip .doc-meta{
+    text-align:right;
+    font-size:11.5px;
+    color:var(--slate);
+    line-height:1.8;
+  }
+  .title-strip .doc-meta b{ color:var(--ink); font-weight:600; }
+  .status-chip{
+    display:inline-block;
+    margin-top:4px;
+    padding:3px 12px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
+    color:#fff;
+    background:var(--blue);
+    border-radius:100px;
+  }
+
+  /* ============ PARTIES ============ */
+  .parties{
+    display:flex;
+    gap:0;
+    padding:22px 44px;
+  }
+  .party{ flex:1; }
+  .party + .party{ margin-left:36px; }
+  .party .eyebrow{
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    color:var(--blue);
+    margin-bottom:8px;
+  }
+  .party .primary{ font-size:15px; font-weight:700; margin-bottom:3px; }
+  .party .line{ font-size:12px; color:var(--slate); line-height:1.65; }
+
+  /* ============ CONTENT ============ */
+  .content{ padding:4px 44px 10px; position:relative; z-index:1; }
+
+  .service-block{ margin-top:26px; }
+  .service-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--ink);
+    margin-bottom:0;
+  }
+  .service-head .drop{
+    width:9px; height:9px;
+    background:var(--blue-bright);
+    border-radius:50% 50% 50% 0;
+    transform:rotate(45deg);
+    flex-shrink:0;
+  }
+  .service-head .name{
+    font-family:'Manrope',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:.3px;
+    text-transform:uppercase;
+  }
+
+  table.items{
+    width:100%;
+    border-collapse:collapse;
+    font-size:11.5px;
+    margin-top:2px;
+  }
+  table.items thead th{
+    text-align:left;
+    font-size:9.5px;
+    letter-spacing:1px;
+    color:var(--slate);
+    font-weight:700;
+    padding:9px 6px;
+    border-bottom:1px solid var(--hairline);
+  }
+  table.items thead th.num{ text-align:right; }
+  table.items tbody td{
+    padding:9px 6px;
+    border-bottom:1px solid var(--hairline);
+    color:var(--ink);
+  }
+  table.items tbody tr:nth-child(even){ background:var(--wash); }
+  table.items td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  table.items td.desc .item-name{ font-weight:600; }
+  table.items td.desc .item-note{ display:block; font-size:10px; color:var(--slate); margin-top:1px; }
+
+  .service-subtotal{
+    display:flex;
+    justify-content:flex-end;
+    gap:26px;
+    padding:8px 6px 0;
+    font-size:11.5px;
+  }
+  .service-subtotal .lbl{ color:var(--slate); }
+  .service-subtotal .val{ font-weight:700; font-variant-numeric:tabular-nums; }
+
+  /* ============ TOTALS ============ */
+  .totals-wrap{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:28px;
+  }
+  .totals{
+    width:280px;
+    font-size:12px;
+  }
+  .totals .row{
+    display:flex; justify-content:space-between;
+    padding:7px 4px;
+    color:var(--slate);
+  }
+  .totals .row b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+  .totals .grand{
+    display:flex; justify-content:space-between;
+    align-items:center;
+    margin-top:6px;
+    padding:13px 16px;
+    background:var(--ink);
+    color:#fff;
+    border-radius:8px;
+  }
+  .totals .grand .lbl{ font-size:11px; letter-spacing:1px; font-weight:700; }
+  .totals .grand .val{ font-family:'Manrope',sans-serif; font-size:18px; font-weight:800; }
+
+  /* ============ NOTES / TERMS ============ */
+  .lower{
+    display:flex;
+    gap:40px;
+    padding:34px 44px 10px;
+    margin-top:10px;
+    border-top:1px solid var(--hairline);
+  }
+  .lower .col{ flex:1; }
+  .lower .eyebrow{
+    font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--blue); margin-bottom:8px;
+  }
+  .lower .terms{ font-size:11px; color:var(--slate); line-height:1.85; }
+  .lower .terms li{ margin-bottom:4px; }
+
+  .sign-box{
+    border:1px solid var(--hairline);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .sign-box .stamp{
+    width:64px; height:64px;
+    border:2px dashed #C7D3DB;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:8.5px; color:#9AA7B0; text-align:center; line-height:1.3;
+    margin:0 auto 14px;
+  }
+  .sign-line{ border-top:1px solid var(--hairline); margin-top:32px; padding-top:6px; font-size:10.5px; color:var(--slate); display:flex; justify-content:space-between; }
+
+  /* ============ FOOTER ============ */
+  .footer{
+    position:relative;
+    z-index:1;
+    margin-top:24px;
+    background:var(--ink);
+    color:#B9C3CC;
+    font-size:10px;
+    padding:14px 44px;
+    display:flex;
+    justify-content:space-between;
+    letter-spacing:.3px;
+  }
+  .footer b{ color:#fff; }
+
+  @media print{
+    body{ background:#fff; padding:0; }
+    .page{ box-shadow:none; width:auto; min-height:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- watermark -->
+  <svg class="watermark" viewBox="0 0 200 200" fill="none">
+    <path d="M100 20 C100 20 60 90 60 130 A40 40 0 0 0 140 130 C140 90 100 20 100 20Z" fill="#0F5FA8"/>
+  </svg>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 8 L92 42 L84 42 L50 15 L16 42 L8 42 Z" fill="#1878C4"/>
+          <rect x="26" y="16" width="8" height="18" fill="#1878C4"/>
+          <rect x="41" y="32" width="9" height="9" fill="#14181D"/>
+          <rect x="52" y="32" width="9" height="9" fill="#14181D"/>
+          <rect x="41" y="43" width="9" height="9" fill="#14181D"/>
+          <rect x="52" y="43" width="9" height="9" fill="#14181D"/>
+          <path d="M30 46 v10 a6 6 0 0 0 6 6 h24 a10 10 0 0 1 10 10" stroke="#1878C4" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <circle cx="72" cy="72" r="5" fill="#1878C4"/>
+          <path d="M76 62 C76 68 82 71 84 76 C85 79 82 82 79 80 C76 78 70 68 76 62Z" fill="#29ABE2"/>
+        </svg>
+      </div>
+      <div class="name">
+        <div class="big">SPENCER&nbsp;WATER SERVICES LTD</div>
+        <div class="small">WATER &amp; ENGINEERING SOLUTIONS</div>
+      </div>
+    </div>
+    <div class="header-contact">
+      <strong>Head Office — Kampala, Uganda</strong>
+      +256 700 000 000 &nbsp;•&nbsp; info@spencerwater.co.ug<br>
+      www.spencerwater.co.ug &nbsp;•&nbsp; TIN: 1000XXXXXX
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="title-strip">
+    <div>
+      <div class="doc-title">QUOTA<span>TION</span></div>
+      <span class="status-chip">PENDING APPROVAL</span>
+    </div>
+    <div class="doc-meta">
+      Reference&nbsp; <b>QTN-2026-000001</b><br>
+      Date Issued&nbsp; <b>22 Aug 2026</b><br>
+      Valid Until&nbsp; <b>30 Sep 2026</b>
+    </div>
+  </div>
+
+  <!-- PARTIES -->
+  <div class="parties">
+    <div class="party">
+      <div class="eyebrow">PREPARED FOR</div>
+      <div class="primary">John Kato</div>
+      <div class="line">
+        Kato Farms Ltd<br>
+        Luuka District, Uganda<br>
+        +256 7XX XXX XXX &nbsp;•&nbsp; john@example.com
+      </div>
+    </div>
+    <div class="party">
+      <div class="eyebrow">PROJECT</div>
+      <div class="primary">Farm Water Supply — Lead LD-2026-000001</div>
+      <div class="line">
+        Prepared by Umar, Sales &amp; Engineering<br>
+        Scope: borehole drilling, solar pump installation and storage
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT: repeat this .service-block for every service on the quotation -->
+  <div class="content">
+
+    <div class="service-block">
+      <div class="service-head"><span class="drop"></span><span class="name">Borehole Drilling</span></div>
+      <table class="items">
+        <thead>
+          <tr><th style="width:46%">Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Rate&nbsp;(UGX)</th><th class="num">Amount&nbsp;(UGX)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="desc"><span class="item-name">Mobilization &amp; site setup</span></td><td class="num">1</td><td class="num">LS</td><td class="num">2,000,000</td><td class="num">2,000,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Drilling</span><span class="item-note">Rotary method, estimated 150m depth</span></td><td class="num">150</td><td class="num">m</td><td class="num">180,000</td><td class="num">27,000,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Casing &amp; screening</span></td><td class="num">150</td><td class="num">m</td><td class="num">95,000</td><td class="num">14,250,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Well development &amp; test pumping</span></td><td class="num">1</td><td class="num">LS</td><td class="num">1,500,000</td><td class="num">1,500,000</td></tr>
+        </tbody>
+      </table>
+      <div class="service-subtotal"><span class="lbl">Service Subtotal</span><span class="val">UGX 44,750,000</span></div>
+    </div>
+
+    <div class="service-block">
+      <div class="service-head"><span class="drop"></span><span class="name">Solar Pump Installation</span></div>
+      <table class="items">
+        <thead>
+          <tr><th style="width:46%">Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Rate&nbsp;(UGX)</th><th class="num">Amount&nbsp;(UGX)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="desc"><span class="item-name">Submersible solar pump</span><span class="item-note">5HP, rated head to match site survey</span></td><td class="num">1</td><td class="num">Unit</td><td class="num">8,500,000</td><td class="num">8,500,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Solar panels</span><span class="item-note">450W monocrystalline</span></td><td class="num">8</td><td class="num">Pcs</td><td class="num">900,000</td><td class="num">7,200,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Pump controller &amp; accessories</span></td><td class="num">1</td><td class="num">Unit</td><td class="num">2,500,000</td><td class="num">2,500,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Installation &amp; commissioning</span></td><td class="num">1</td><td class="num">LS</td><td class="num">3,000,000</td><td class="num">3,000,000</td></tr>
+        </tbody>
+      </table>
+      <div class="service-subtotal"><span class="lbl">Service Subtotal</span><span class="val">UGX 21,200,000</span></div>
+    </div>
+
+    <div class="service-block">
+      <div class="service-head"><span class="drop"></span><span class="name">Water Storage</span></div>
+      <table class="items">
+        <thead>
+          <tr><th style="width:46%">Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Rate&nbsp;(UGX)</th><th class="num">Amount&nbsp;(UGX)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="desc"><span class="item-name">Storage tank</span><span class="item-note">10,000L, HDPE, UV-stabilized</span></td><td class="num">1</td><td class="num">Unit</td><td class="num">3,200,000</td><td class="num">3,200,000</td></tr>
+          <tr><td class="desc"><span class="item-name">Tank stand &amp; foundation</span></td><td class="num">1</td><td class="num">LS</td><td class="num">1,850,000</td><td class="num">1,850,000</td></tr>
+        </tbody>
+      </table>
+      <div class="service-subtotal"><span class="lbl">Service Subtotal</span><span class="val">UGX 5,050,000</span></div>
+    </div>
+
+    <!-- TOTALS -->
+    <div class="totals-wrap">
+      <div class="totals">
+        <div class="row"><span>Subtotal</span><b>UGX 71,000,000</b></div>
+        <div class="row"><span>Discount</span><b>— UGX 1,000,000</b></div>
+        <div class="row"><span>VAT (18%)</span><b>UGX 12,600,000</b></div>
+        <div class="grand"><span class="lbl">TOTAL DUE</span><span class="val">UGX 82,600,000</span></div>
+      </div>
+    </div>
+
+    <!-- TERMS + APPROVAL -->
+    <div class="lower">
+      <div class="col">
+        <div class="eyebrow">TERMS &amp; CONDITIONS</div>
+        <ul class="terms">
+          <li>This quotation is valid for 30 days from the date of issue.</li>
+          <li>50% deposit required to commence works; balance on completion.</li>
+          <li>Prices are inclusive of VAT and exclude any site access or civil works not listed above.</li>
+          <li>Delivery and installation timelines confirmed upon acceptance.</li>
+          <li>Warranty terms apply per manufacturer specifications for supplied equipment.</li>
+        </ul>
+      </div>
+      <div class="col" style="max-width:220px;">
+        <div class="eyebrow">AUTHORIZATION</div>
+        <div class="sign-box">
+          <div class="stamp">APPROVED<br>STAMP</div>
+          <div class="sign-line"><span>Signed</span><span>Date</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span><b>Spencer Water Services Ltd</b> &nbsp;— &nbsp;Reg. No. 000000</span>
+    <span>QTN-2026-000001 &nbsp;•&nbsp; Page 1 of 1</span>
+  </div>
+
+</div>
+
+</body>
+</html>

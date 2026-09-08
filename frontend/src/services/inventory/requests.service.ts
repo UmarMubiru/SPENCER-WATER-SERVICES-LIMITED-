@@ -1,0 +1,28 @@
+import inventoryAPI from "./api";
+import { ListRequestsParams, MaterialRequestInput } from "@/types/inventory/requests";
+
+const basePath = "/material-requests";
+
+export const RequestService = {
+  getAll: (params: ListRequestsParams) => inventoryAPI.get(`${basePath}/`, { params }),
+  getById: (id: string) => inventoryAPI.get(`${basePath}/${id}/`),
+  create: (data: MaterialRequestInput) => inventoryAPI.post(`${basePath}/`, data),
+
+  approve: (id: string, approvedQuantities?: Record<string, number>, notes?: string) =>
+    inventoryAPI.post(`${basePath}/${id}/approve/`, { approvedQuantities, notes }),
+
+  reject: (id: string, notes?: string) =>
+    inventoryAPI.post(`${basePath}/${id}/reject/`, { notes }),
+
+  invalidate: (id: string, notes?: string) =>
+    inventoryAPI.post(`${basePath}/${id}/invalidate/`, { notes }),
+
+  fulfill: (id: string, issuedQuantities?: Record<string, number>) =>
+    inventoryAPI.post(`${basePath}/${id}/fulfill/`, { issuedQuantities }),
+
+  returnTool: (itemId: string, data: { quantity_returned: number; condition_at_return: string; return_notes: string }) =>
+    inventoryAPI.post(`/material-request-items/${itemId}/return/`, data),
+
+  extendReturnDate: (itemId: string, data: { expected_return_date: string; reason: string }) =>
+    inventoryAPI.post(`/material-request-items/${itemId}/extend-return/`, data),
+};

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Request Details{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between mb-4">
+
+<div>
+
+<h3>
+
+{{ request.request_number }}
+
+</h3>
+
+<p class="text-muted">
+
+{{ request.project_reference }}
+
+</p>
+
+</div>
+
+<div>
+
+{% if request.status == "PENDING" %}
+
+<span class="badge bg-warning text-dark">
+
+Pending
+
+</span>
+
+{% elif request.status == "APPROVED" %}
+
+<span class="badge bg-primary">
+
+Approved
+
+</span>
+
+{% elif request.status == "ISSUED" %}
+
+<span class="badge bg-success">
+
+Issued
+
+</span>
+
+{% else %}
+
+<span class="badge bg-danger">
+
+Rejected
+
+</span>
+
+{% endif %}
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="col-lg-8">
+
+<div class="card border-0 shadow-sm">
+
+<div class="card-header bg-white">
+
+Requested Materials
+
+</div>
+
+<div class="card-body">
+
+<table class="table">
+
+<thead>
+
+<tr>
+
+<th>Item</th>
+
+<th>Requested</th>
+
+<th>Approved</th>
+
+<th>Issued</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for line in request.items.all %}
+
+<tr>
+
+<td>{{ line.inventory_item }}</td>
+
+<td>{{ line.quantity_requested }}</td>
+
+<td>{{ line.quantity_issued }}</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+
+<td colspan="3" class="text-center">
+
+No materials.
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="card border-0 shadow-sm">
+
+<div class="card-header bg-white">
+
+Workflow
+
+</div>
+
+<div class="card-body">
+
+<div class="timeline-item">
+
+<i class="bi bi-check-circle-fill text-success"></i>
+
+<strong>Created</strong>
+
+<br>
+
+<small>
+
+{{ request.created_at }}
+
+</small>
+
+</div>
+
+<hr>
+
+{% if request.approved_at %}
+
+<div class="timeline-item">
+
+<i class="bi bi-check-circle-fill text-primary"></i>
+
+<strong>Approved by {{ request.approved_by }}</strong>
+
+<br>
+
+<small>
+
+{{ request.approved_at }}
+
+</small>
+
+</div>
+
+{% endif %}
+
+{% if request.rejected_at %}
+
+<hr>
+
+<div class="timeline-item">
+
+<i class="bi bi-x-circle-fill text-danger"></i>
+
+<strong>Rejected by {{ request.rejected_by }}</strong>
+
+<br>
+
+<small>
+
+{{ request.rejected_at }}
+
+</small>
+
+</div>
+
+{% endif %}
+
+{% if request.issued_at %}
+
+<hr>
+
+<div class="timeline-item">
+
+<i class="bi bi-box-seam-fill text-success"></i>
+
+<strong>Materials Issued</strong>
+
+<br>
+
+<small>
+
+{{ request.issued_at }}
+
+</small>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+
+<div class="card-body d-grid gap-2">
+
+{% if request.status == "PENDING" %}
+
+<a href="#" class="btn btn-primary">
+
+Approve Request
+
+</a>
+
+<a href="#" class="btn btn-outline-danger">
+
+Reject Request
+
+</a>
+
+{% elif request.status == "APPROVED" %}
+
+<a href="#" class="btn btn-success">
+
+Issue Materials
+
+</a>
+
+{% endif %}
+
+<button onclick="window.print()" class="btn btn-outline-secondary">
+
+<i class="bi bi-printer"></i>
+
+Print Request
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

@@ -32,13 +32,39 @@ export const employeeService = {
     return response.json();
   },
 
-  async createEmployee(employee: Partial<Employee>): Promise<Employee> {
+  async createEmployee(employee: Partial<Employee> & { contract_document?: File }): Promise<Employee> {
+    const formData = new FormData();
+
+    // Add common fields
+    formData.append('employee_type', employee.employee_type || 'permanent');
+    formData.append('full_name', employee.full_name || '');
+    formData.append('phone', employee.phone || '');
+    formData.append('email', employee.email || '');
+    if (employee.national_id) formData.append('national_id', employee.national_id);
+    if (employee.department) formData.append('department', String(employee.department));
+
+    // Add type-specific fields
+    if (employee.employee_type === 'permanent') {
+      if (employee.job_title) formData.append('job_title', employee.job_title);
+      if (employee.salary) formData.append('salary', String(employee.salary));
+    } else {
+      if (employee.wage_rate) formData.append('wage_rate', String(employee.wage_rate));
+      if (employee.contract_start_date) formData.append('contract_start_date', employee.contract_start_date);
+      if (employee.contract_end_date) formData.append('contract_end_date', employee.contract_end_date);
+    }
+
+    // Add contract document if present
+    if (employee.contract_document) {
+      formData.append('contract_document', employee.contract_document);
+    }
+
     const response = await fetch(`${API_BASE}/employees/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(employee),
+      body: formData,
     });
+
     if (!response.ok) throw new Error('Failed to create employee');
+
     return response.json();
   },
 

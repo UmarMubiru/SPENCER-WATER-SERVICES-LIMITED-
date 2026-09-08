@@ -1,0 +1,191 @@
+<nav class="topbar">
+
+    <div class="left-side">
+
+        <button id="toggleSidebar" class="menu-btn">
+
+            <i class="bi bi-list"></i>
+
+        </button>
+
+        <div>
+
+            <h3 class="page-title">
+
+                {% block heading %}
+
+                Inventory Dashboard
+
+                {% endblock %}
+
+            </h3>
+
+            <small class="text-muted">
+
+                Spencer Water Services Limited
+
+            </small>
+
+        </div>
+
+    </div>
+
+    <div class="right-side">
+
+        <div class="search-wrapper">
+
+            <i class="bi bi-search"></i>
+
+            <input
+                type="text"
+                placeholder="Search inventory...">
+
+        </div>
+
+        <div class="dropdown">
+
+            <button
+                class="icon-button"
+                data-bs-toggle="dropdown">
+
+                <i class="bi bi-bell"></i>
+
+                <span class="notification-badge">
+
+                    3
+
+                </span>
+
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+
+                <li>
+
+                    <h6 class="dropdown-header">
+
+                        Notifications
+
+                    </h6>
+
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item">
+
+                        PVC Pipes running low
+
+                    </a>
+
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item">
+
+                        New Material Request
+
+                    </a>
+
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item">
+
+                        Purchase Order Approved
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </div>
+
+        <div class="dropdown">
+
+            <button
+                class="profile-button"
+                data-bs-toggle="dropdown">
+
+                <div class="avatar">
+
+                    {{ request.user.username|first|upper }}
+
+                </div>
+
+                <div>
+
+                    <strong>
+
+                        {{ request.user.username }}
+
+                    </strong>
+
+                    <br>
+
+                    <small>
+
+                        Administrator
+
+                    </small>
+
+                </div>
+
+                <i class="bi bi-chevron-down"></i>
+
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+
+                <li>
+
+                    <a class="dropdown-item">
+
+                        <i class="bi bi-person"></i>
+
+                        Profile
+
+                    </a>
+
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item">
+
+                        <i class="bi bi-gear"></i>
+
+                        Settings
+
+                    </a>
+
+                </li>
+
+                <li>
+
+                    <hr>
+
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item text-danger">
+
+                        <i class="bi bi-box-arrow-right"></i>
+
+                        Logout
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </div>
+
+    </div>
+
+</nav>

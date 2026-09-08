@@ -1,433 +1,402 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Sidebar } from '../../components/Sidebar';
-import { Topbar } from '../../components/Topbar';
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { AdminLayout } from '../../components/AdminLayout';
+import { reportsService } from '@/services/reportsService';
+import { Card, KPICard, Sparkline } from '@/components/reports';
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+import { Users, Briefcase, Package, DollarSign, AlertTriangle, Calendar, TrendingUp, Download } from 'lucide-react';
+import PageHeader from '../../../../components/admin/ui/PageHeader';
 
-interface Report {
-  id: string;
-  report_type: string;
-  category: string;
-  status: 'QUEUED' | 'PROCESSING' | 'READY' | 'FAILED';
-  file_format: string;
-  date_range_start?: string;
-  date_range_end?: string;
-  generated_by?: string;
-  requested_at: string;
-  completed_at?: string;
-  error_message?: string;
-}
+const ACTION_COLORS: Record<string, string> = {
+  created: 'bg-blue-100 text-blue-700 border-blue-200',
+  updated: 'bg-blue-50 text-blue-700 border-blue-200',
+  assigned: 'bg-blue-100 text-blue-700 border-blue-200',
+  approved: 'bg-blue-100 text-blue-700 border-blue-200',
+  warning: 'bg-blue-50 text-blue-700 border-blue-200',
+  deleted: 'bg-blue-100 text-blue-700 border-blue-200',
+  failed_login: 'bg-blue-800 text-white border-blue-700',
+};
 
-export default function ReportsDashboardPage() {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  
-  const [filters, setFilters] = useState({
-    category: '',
-    status: '',
-    dateFrom: '',
-    dateTo: '',
-  });
-  
-  const [generateForm, setGenerateForm] = useState({
-    category: '',
-    report_type: '',
-    file_format: 'PDF',
-    date_range_start: '',
-    date_range_end: '',
-  });
+const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-  const reportTypes = {
-    'EXECUTIVE': ['Executive Summary', 'Monthly Business Review', 'Quarterly Performance Report'],
-    'PROJECT': ['Project Status Report', 'Project Timeline Report', 'Resource Utilization Report'],
-    'FINANCIAL': ['Revenue Report', 'Expense Report', 'Profit Loss Statement'],
-    'TENDER': ['Tender Status Report', 'Win Rate Analysis', 'Tender Pipeline Report'],
-    'INVENTORY': ['Shortfall Report', 'Weekly Stock Report', 'Stock Valuation Report', 'Consumption Report', 'Stock History Report', 'Expiry Report'],
-    'CRM': ['Lead Pipeline Report', 'Customer Activity Report', 'Conversion Funnel Report'],
+const MODULE_PERMISSIONS: Record<string, string> = {
+  Employees: 'employees',
+  Projects: 'projects',
+  Inventory: 'inventory',
+  CRM: 'crm',
+  Content: 'content',
+  Users: 'users',
+};
+
+export default function ExecutiveOverviewPage() {
+  const { user } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [dateRange, setDateRange] = useState('30d');
+
+  const fetchData = () => {
+    reportsService.getExecutiveOverview(dateRange).then(setData);
   };
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    fetchData();
+    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [dateRange]);
+  if (!data) return <p>Loading...</p>;
 
-  const fetchReports = async () => {
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/reports/');
-      if (response.ok) {
-        const data = await response.json();
-        setReports(Array.isArray(data) ? data : []);
-      } else {
-        setReports([]);
-      }
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-      setReports([]);
-    } finally {
-      setLoading(false);
+  const modulePermissions = user?.module_permissions || {};
+  const hasDepartmentPolicy = Object.keys(modulePermissions).length > 0;
+  
+  const canAccessModule = (module: string) => {
+    if (hasDepartmentPolicy) {
+      const modulePermission = modulePermissions[module];
+      return ['view', 'edit', 'full'].includes(modulePermission);
     }
+    // Fallback for administrators
+    return user?.role === 'Administrator';
   };
 
-  const handleGenerateReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/reports/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generateForm),
-      });
-      
-      if (response.ok) {
-        setShowGenerateModal(false);
-        setGenerateForm({ category: '', report_type: '', file_format: 'PDF', date_range_start: '', date_range_end: '' });
-        fetchReports();
-      } else {
-        alert('Error generating report');
-      }
-    } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Error generating report');
-    }
-  };
+  const accessibleModules = Object.entries(MODULE_PERMISSIONS)
+    .filter(([, module]) => canAccessModule(module))
+    .map(([label]) => label);
 
-  const handleDownloadReport = async (reportId: string) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/reports/${reportId}/download/`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `report_${reportId}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        alert('Error downloading report');
-      }
-    } catch (error) {
-      console.error('Error downloading report:', error);
-      alert('Error downloading report');
-    }
-  };
+  const revenueData = data.revenue_trend || [
+    { month: 'Jan', revenue: 1.8 },
+    { month: 'Feb', revenue: 2.1 },
+    { month: 'Mar', revenue: 1.9 },
+    { month: 'Apr', revenue: 2.3 },
+    { month: 'May', revenue: 2.5 },
+    { month: 'Jun', revenue: 2.3 },
+  ];
 
-  const filteredReports = reports.filter(report => {
-    if (filters.category && report.category !== filters.category) return false;
-    if (filters.status && report.status !== filters.status) return false;
-    if (filters.dateFrom && new Date(report.requested_at) < new Date(filters.dateFrom)) return false;
-    if (filters.dateTo && new Date(report.requested_at) > new Date(filters.dateTo)) return false;
-    return true;
-  });
+  const employeeDistribution = data.employee_distribution || [
+    { name: 'Engineering', value: 45 },
+    { name: 'Sales', value: 32 },
+    { name: 'Operations', value: 28 },
+    { name: 'Finance', value: 22 },
+    { name: 'HR', value: 25 },
+  ];
 
-  const stats = [
-    { label: 'Total Reports', value: reports.length, change: 'All time', color: 'blue' },
-    { label: 'Ready to Download', value: reports.filter(r => r.status === 'READY').length, change: 'Available now', color: 'green' },
-    { label: 'Processing', value: reports.filter(r => r.status === 'PROCESSING').length, change: 'In queue', color: 'amber' },
-    { label: 'Failed', value: reports.filter(r => r.status === 'FAILED').length, change: 'Need attention', color: 'red' },
+  const projectsByStatus = data.projects_by_status || [
+    { status: 'Not Started', count: 5 },
+    { status: 'In Progress', count: 12 },
+    { status: 'Review', count: 4 },
+    { status: 'Completed', count: 3 },
   ];
 
   return (
-    <div className="min-h-screen flex" style={{
-      background: 'radial-gradient(circle at 14% 12%, rgba(0, 149, 190, 0.28), transparent 28%), radial-gradient(circle at 86% 18%, rgba(30, 99, 184, 0.22), transparent 30%), linear-gradient(135deg, #eef8ff 0%, #d8ecfb 38%, #f6f9fe 100%)',
-      backgroundAttachment: 'fixed'
-    }}>
-      <Sidebar activePath="/admin/reports/dashboard" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Reports & Analytics"
-          subtitle="View and generate business reports and analytics"
-          onSearch={(q) => console.log('Search reports:', q)}
-        />
-
-        <div className="p-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {stats.map((stat, index) => {
-              const colorClasses = {
-                blue: { bg: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', valueColor: 'text-blue-700' },
-                green: { bg: 'bg-green-50', iconBg: 'bg-green-100', iconColor: 'text-green-600', valueColor: 'text-green-700' },
-                amber: { bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', valueColor: 'text-amber-700' },
-                red: { bg: 'bg-red-50', iconBg: 'bg-red-100', iconColor: 'text-red-600', valueColor: 'text-red-700' },
-              };
-              const colors = colorClasses[stat.color as keyof typeof colorClasses] || colorClasses.blue;
-              
-              return (
-                <div key={index} className={`${colors.bg} rounded-xl p-6 border border-gray-200`}>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
-                  <p className={`text-3xl font-bold ${colors.valueColor} mb-1`}>{stat.value}</p>
-                  <p className="text-sm text-gray-500">{stat.change}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <section className="mb-6 rounded-xl border border-gray-200 bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Report Timeline</h2>
-              <span className="text-sm text-gray-500">All times: East Africa Time</span>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-lg bg-blue-50 p-4"><p className="text-sm font-medium text-blue-900">Last generated</p><p className="mt-1 text-sm text-blue-700">10 Jul 2026, 09:42 EAT</p></div>
-              <div className="rounded-lg bg-amber-50 p-4"><p className="text-sm font-medium text-amber-900">Next scheduled report</p><p className="mt-1 text-sm text-amber-700">14 Jul 2026, 08:00 EAT</p></div>
-              <div className="rounded-lg bg-green-50 p-4"><p className="text-sm font-medium text-green-900">Last download</p><p className="mt-1 text-sm text-green-700">10 Jul 2026, 10:03 EAT</p></div>
-            </div>
-          </section>
-
-          {/* Report Categories */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {[
-              { name: 'Executive Reports', icon: '📊', category: 'EXECUTIVE' },
-              { name: 'Project Reports', icon: '📋', category: 'PROJECT' },
-              { name: 'Financial Reports', icon: '💰', category: 'FINANCIAL' },
-              { name: 'Tender Reports', icon: '📝', category: 'TENDER' },
-              { name: 'Inventory Reports', icon: '📦', category: 'INVENTORY' },
-              { name: 'CRM Reports', icon: '👥', category: 'CRM' },
-            ].map((category, index) => (
-              <div 
-                key={index} 
-                className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => setFilters(prev => ({ ...prev, category: prev.category === category.category ? '' : category.category }))}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="text-3xl">{category.icon}</div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
-                    <p className="text-sm text-gray-500">{reports.filter(r => r.category === category.category).length} reports available</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Recent Reports */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Reports</h2>
-                <button 
-                  onClick={() => setShowGenerateModal(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  + Generate Report
-                </button>
-              </div>
-              
-              {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={filters.category}
-                    onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    <AdminLayout
+      title="Executive Overview"
+      subtitle="CEO Dashboard - Key performance indicators"
+      activePath="/admin/reports/dashboard"
+    >
+      <div className="space-y-4 p-5 md:p-6">
+        {/* Header with Date Range and Export */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {['Today', '30d', 'Quarter', 'Custom'].map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setDateRange(range)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      dateRange === range
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-blue-900 hover:bg-blue-50 border border-blue-200'
+                    }`}
                   >
-                    <option value="">All Categories</option>
-                    <option value="EXECUTIVE">Executive</option>
-                    <option value="PROJECT">Project</option>
-                    <option value="FINANCIAL">Financial</option>
-                    <option value="TENDER">Tender</option>
-                    <option value="INVENTORY">Inventory</option>
-                    <option value="CRM">CRM</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">All Status</option>
-                    <option value="QUEUED">Queued</option>
-                    <option value="PROCESSING">Processing</option>
-                    <option value="READY">Ready</option>
-                    <option value="FAILED">Failed</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                  <input
-                    type="date"
-                    value={filters.dateFrom}
-                    onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                  <input
-                    type="date"
-                    value={filters.dateTo}
-                    onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                    {range === '30d' ? 'Last 30 Days' : range}
+                  </button>
+                ))}
               </div>
-            </div>
-            
-            {loading ? (
-              <div className="p-6 text-center text-gray-500">Loading reports...</div>
-            ) : filteredReports.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No reports found matching your filters.</div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">ID</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Report Name</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Category</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Requested</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Format</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReports.map((report) => (
-                    <tr key={report.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-4 px-6 font-medium text-gray-900">{report.id}</td>
-                      <td className="py-4 px-6 text-gray-700">{report.report_type}</td>
-                      <td className="py-4 px-6 text-gray-700">{report.category}</td>
-                      <td className="py-4 px-6 text-gray-700">{new Date(report.requested_at).toLocaleString()}</td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          report.status === 'READY' ? 'bg-green-100 text-green-700' :
-                          report.status === 'PROCESSING' ? 'bg-amber-100 text-amber-700' :
-                          report.status === 'FAILED' ? 'bg-red-100 text-red-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {report.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-gray-700">{report.file_format}</td>
-                      <td className="py-4 px-6">
-                        {report.status === 'READY' ? (
-                          <button 
-                            onClick={() => handleDownloadReport(report.id)}
-                            className="text-blue-600 hover:text-blue-800 font-medium"
-                          >
-                            Download
-                          </button>
-                        ) : report.status === 'FAILED' ? (
-                          <span className="text-red-600 text-sm">{report.error_message?.substring(0, 30)}...</span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">Processing...</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Generate Report Modal */}
-      {showGenerateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Generate Report</h3>
-              <button
-                onClick={() => setShowGenerateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-medium text-blue-900 hover:bg-blue-50">
+                <Download className="w-3 h-3" />
+                Export PDF
               </button>
             </div>
-            
-            <form onSubmit={handleGenerateReport}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={generateForm.category}
-                    onChange={(e) => setGenerateForm({ ...generateForm, category: e.target.value, report_type: '' })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select category</option>
-                    {Object.keys(reportTypes).map(category => (
-                      <option key={category} value={category}>{category}</option>
+
+            {/* Module Navigation - Filtered by Department Permissions */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              {accessibleModules.map((module) => (
+                <button
+                  key={module}
+                  className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-medium text-blue-900 hover:bg-blue-50 whitespace-nowrap"
+                >
+                  {module}
+                </button>
+              ))}
+              {accessibleModules.length === 0 && (
+                <p className="text-sm text-blue-600">No modules accessible based on your department permissions</p>
+              )}
+            </div>
+
+            {/* KPI Cards - Filtered by accessible modules */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+              {canAccessModule('employees') && (
+                <KPICard
+                  title="Total Employees"
+                  value={data.kpis.employees}
+                  change={data.kpis.employee_change || 0}
+                  sparkline={<Sparkline data={data.kpis.employee_history || [140, 142, 145, 148, 150, 152]} color="#3b82f6" />}
+                  icon={<Users className="w-4 h-4 text-blue-600" />}
+                />
+              )}
+              {canAccessModule('projects') && (
+                <KPICard
+                  title="Running Projects"
+                  value={data.kpis.projects}
+                  change={data.kpis.project_change || 0}
+                  sparkline={<Sparkline data={data.kpis.project_history || [28, 27, 26, 25, 24, 24]} color="#3b82f6" />}
+                  icon={<Briefcase className="w-4 h-4 text-blue-600" />}
+                />
+              )}
+              {canAccessModule('crm') && (
+                <KPICard
+                  title="Pending Quotations"
+                  value={data.kpis.pending_quotations}
+                  change={data.kpis.quotations_change || 0}
+                  changeLabel="new this week"
+                  icon={<TrendingUp className="w-4 h-4 text-blue-600" />}
+                />
+              )}
+              {canAccessModule('inventory') && (
+                <KPICard
+                  title="Inventory Value"
+                  value={data.kpis.inventory_value || "UGX 0"}
+                  change={data.kpis.inventory_change || 0}
+                  sparkline={<Sparkline data={data.kpis.inventory_history || [120, 125, 130, 128, 132, 135]} color="#3b82f6" />}
+                  icon={<Package className="w-4 h-4 text-blue-600" />}
+                />
+              )}
+              {canAccessModule('projects') && (
+                <KPICard
+                  title="Revenue"
+                  value={data.kpis.revenue || "UGX 0"}
+                  change={data.kpis.revenue_change || 0}
+                  sparkline={<Sparkline data={data.kpis.revenue_history || [1.8, 1.9, 2.0, 2.1, 2.2, 2.3]} color="#3b82f6" />}
+                  icon={<DollarSign className="w-4 h-4 text-blue-600" />}
+                />
+              )}
+              <KPICard
+                title="Critical Alerts"
+                value={data.critical_alerts?.length || 0}
+                icon={<AlertTriangle className="w-4 h-4 text-blue-600" />}
+              />
+            </div>
+
+            {/* Charts Grid - Filtered by accessible modules */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {canAccessModule('projects') && (
+                <>
+                  {/* Revenue Trend */}
+                  <Card title="Revenue Trend" className="xl:col-span-2">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <AreaChart data={revenueData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </Card>
+
+                  {/* Projects by Status */}
+                  <Card title="Projects by Status">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={projectsByStatus}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="status" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#3b82f6" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </>
+              )}
+
+              {canAccessModule('employees') && (
+                /* Employee Distribution */
+                <Card title="Employee Distribution">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={employeeDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={(entry) => entry.name}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {employeeDistribution.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+              )}
+
+              {canAccessModule('crm') && (
+                /* Quotation Conversion Funnel */
+                <Card title="Quotation Conversion Funnel">
+                  <div className="space-y-3">
+                    {(data.quotation_funnel || [
+                      { label: 'Leads', value: 100, color: '#3b82f6' },
+                      { label: 'Quotations Sent', value: 75, color: '#60a5fa' },
+                      { label: 'Negotiations', value: 50, color: '#93c5fd' },
+                      { label: 'Won', value: 35, color: '#bfdbfe' },
+                    ]).map((stage: any) => (
+                      <div key={stage.label}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-medium text-blue-900">{stage.label}</span>
+                          <span className="text-blue-600">{stage.value}</span>
+                        </div>
+                        <div className="w-full bg-blue-100 rounded-full h-1.5">
+                          <div
+                            className="h-1.5 rounded-full transition-all"
+                            style={{ width: `${stage.value}%`, backgroundColor: stage.color }}
+                          />
+                        </div>
+                      </div>
                     ))}
-                  </select>
+                  </div>
+                </Card>
+              )}
+
+              {canAccessModule('inventory') && (
+                /* Low Stock Items */
+                <Card title="Low Stock Items">
+                  <div className="space-y-2">
+                    {(data.low_stock_items || [
+                      { name: 'PVC Pipes 2"', qty: 5, level: 20 },
+                      { name: 'Water Meters', qty: 8, level: 25 },
+                      { name: 'Fittings Kit', qty: 3, level: 15 },
+                    ]).map((item: any) => (
+                      <div key={item.name} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-100">
+                        <div>
+                          <p className="font-medium text-xs text-blue-900">{item.name}</p>
+                          <p className="text-[10px] text-blue-600">Qty: {item.qty}</p>
+                        </div>
+                        <span className="text-[10px] font-medium text-blue-700">{item.level}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Upcoming Deadlines - Common to all */}
+              <Card title="Upcoming Deadlines">
+                <div className="space-y-2">
+                  {(data.upcoming_deadlines || [
+                    { title: 'Project A Completion', date: '2 days', priority: 'high' },
+                    { title: 'Contract Renewal - John Doe', date: '5 days', priority: 'medium' },
+                    { title: 'Quotation Submission - XYZ Corp', date: '7 days', priority: 'low' },
+                  ]).map((deadline: any) => (
+                    <div key={deadline.title} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-xs text-blue-900">{deadline.title}</p>
+                        <p className="text-[10px] text-blue-600">{deadline.date}</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                        deadline.priority === 'high' ? 'bg-blue-200 text-blue-800' :
+                        deadline.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                        'bg-blue-50 text-blue-600'
+                      }`}>
+                        {deadline.priority}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                
-                {generateForm.category && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
-                    <select
-                      value={generateForm.report_type}
-                      onChange={(e) => setGenerateForm({ ...generateForm, report_type: e.target.value })}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select report type</option>
-                      {reportTypes[generateForm.category as keyof typeof reportTypes]?.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
+              </Card>
+            </div>
+
+            {/* Bottom Section: Activity and Alerts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Recent Activity Timeline */}
+              <Card title="Recent Activity">
+                <div className="space-y-4">
+                  {(() => {
+                    // Filter activities based on user's module permissions
+                    const accessibleModules = Object.entries(modulePermissions)
+                      .filter(([_, permission]) => ['view', 'edit', 'full'].includes(permission))
+                      .map(([module, _]) => module);
+
+                    const filteredActivities = data.recent_activity.filter((activity: any) => {
+                      // If user has no department policy, show all activities (backward compatibility)
+                      if (!hasDepartmentPolicy) return true;
+
+                      // If user is administrator, show all activities
+                      if (user?.role === 'Administrator') return true;
+
+                      // Filter by accessible modules
+                      if (activity.module && accessibleModules.length > 0) {
+                        return accessibleModules.includes(activity.module);
+                      }
+
+                      // If no module specified, show it (backward compatibility)
+                      return true;
+                    });
+
+                    return filteredActivities.slice(0, 5).map((activity: any, index: number) => (
+                      <div key={activity.id} className="flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-3 h-3 rounded-full bg-blue-500`} />
+                          {index < filteredActivities.slice(0, 5).length - 1 && (
+                            <div className="w-0.5 h-full bg-blue-200 mt-2" />
+                          )}
+                        </div>
+                        <div className="flex-1 pb-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${ACTION_COLORS[activity.action_type] || 'bg-blue-100 text-blue-700'}`}>
+                              {activity.module}
+                            </span>
+                            <span className="text-sm text-blue-600">{activity.action}</span>
+                          </div>
+                          <p className="text-xs text-blue-400">{new Date(activity.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Card>
+
+              {/* Critical Alerts */}
+              <Card title="Critical Alerts">
+                {data.critical_alerts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <AlertTriangle className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+                    <p className="text-sm text-blue-600">No critical alerts</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {data.critical_alerts.map((alert: any) => (
+                      <div key={alert.id} className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm text-blue-900">{alert.title || alert.message}</p>
+                            <p className="text-xs text-blue-700 mt-1">{alert.description || alert.message}</p>
+                            {alert.due_date && (
+                              <p className="text-xs text-blue-600 mt-2">Due: {new Date(alert.due_date).toLocaleDateString()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Format</label>
-                  <select
-                    value={generateForm.file_format}
-                    onChange={(e) => setGenerateForm({ ...generateForm, file_format: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="PDF">PDF</option>
-                    <option value="XLSX">Excel</option>
-                  </select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range Start</label>
-                    <input
-                      type="date"
-                      value={generateForm.date_range_start}
-                      onChange={(e) => setGenerateForm({ ...generateForm, date_range_start: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range End</label>
-                    <input
-                      type="date"
-                      value={generateForm.date_range_end}
-                      onChange={(e) => setGenerateForm({ ...generateForm, date_range_end: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowGenerateModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Generate
-                </button>
-              </div>
-            </form>
+              </Card>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+    </AdminLayout>
   );
 }

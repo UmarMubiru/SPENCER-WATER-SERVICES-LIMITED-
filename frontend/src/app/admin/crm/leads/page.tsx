@@ -1,441 +1,352 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Sidebar } from '../../components/Sidebar';
-import { Topbar } from '../../components/Topbar';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { AdminLayout } from '../../components/AdminLayout';
+import Link from 'next/link';
+import DashboardCard from '../../../../components/admin/ui/DashboardCard';
+import StatusBadge from '../../../../components/admin/ui/StatusBadge';
+import { Users, TrendingUp, Clock, CheckCircle, AlertCircle, Filter, X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 interface Lead {
   id: string;
+  lead_number: string;
   customer_name: string;
-  company_name?: string;
-  source: 'WEBSITE' | 'MANUAL';
-  stage: 'NEW' | 'CONTACTED' | 'SITE_VISIT_SCHEDULED' | 'QUOTED' | 'NEGOTIATION' | 'WON' | 'LOST';
-  assigned_to?: string;
-  estimated_value?: number;
-  created_at: string;
-  closed_at?: string;
-}
-
-interface CustomerProfile {
-  id: string;
-  full_name: string;
-  company_name?: string;
+  company?: string;
   phone: string;
-  email?: string;
-  location?: string;
+  email: string;
+  district?: string;
+  service: string;
+  description: string;
+  budget_range?: string;
+  timeline?: string;
+  source: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
-const STAGES = [
-  { id: 'NEW', label: 'New', color: 'blue' },
-  { id: 'CONTACTED', label: 'Contacted', color: 'amber' },
-  { id: 'SITE_VISIT_SCHEDULED', label: 'Site Visit', color: 'purple' },
-  { id: 'QUOTED', label: 'Quoted', color: 'green' },
-  { id: 'NEGOTIATION', label: 'Negotiation', color: 'orange' },
-  { id: 'WON', label: 'Won', color: 'green' },
-  { id: 'LOST', label: 'Lost', color: 'red' },
+const STATUSES = [
+  { id: 'new', label: 'New', color: 'blue' },
+  { id: 'contacted', label: 'Contacted', color: 'amber' },
+  { id: 'qualified', label: 'Qualified', color: 'cyan' },
+  { id: 'site_visit', label: 'Site Visit', color: 'purple' },
+  { id: 'estimating', label: 'Estimating', color: 'indigo' },
+  { id: 'quotation', label: 'Quotation', color: 'green' },
+  { id: 'negotiation', label: 'Negotiation', color: 'orange' },
+  { id: 'won', label: 'Won', color: 'green' },
+  { id: 'lost', label: 'Lost', color: 'red' },
 ];
 
-export default function LeadsPage() {
+const SERVICE_LABELS: { [key: string]: string } = {
+  borehole_drilling: 'Borehole Drilling',
+  solar_pump_installation: 'Solar Pump Installation',
+  water_treatment: 'Water Treatment',
+  pipeline_extension: 'Pipeline Extension',
+  plumbing: 'Plumbing',
+  water_storage: 'Water Storage',
+  maintenance: 'Maintenance',
+  water_taps_accessories: 'Water Taps & Accessories',
+  other: 'Other',
+};
+
+function LeadsPageContent() {
+  const searchParams = useSearchParams();
+  const serviceFilter = searchParams.get('service');
+
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  
-  const [formData, setFormData] = useState({
-    customer_id: '',
-    source: 'MANUAL' as const,
-    stage: 'NEW' as const,
-    assigned_to: '',
-    estimated_value: '',
-  });
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchLeads();
+  }, [statusFilter, serviceFilter]);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const fetchLeads = async () => {
     try {
-      const [leadsRes, customersRes] = await Promise.all([
-        fetch('http://127.0.0.1:8000/api/crm/leads/'),
-        fetch('http://127.0.0.1:8000/api/crm/customers/'),
-      ]);
-      
-      if (leadsRes.ok) setLeads(await leadsRes.json());
-      if (customersRes.ok) setCustomers(await customersRes.json());
+      let url = 'http://127.0.0.1:8000/api/quotations/leads/';
+      const params = [];
+
+      if (statusFilter !== 'all') {
+        params.push(`status=${statusFilter}`);
+      }
+      if (serviceFilter) {
+        params.push(`service=${serviceFilter}`);
+      }
+
+      if (params.length > 0) {
+        url += '?' + params.join('&');
+      }
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setLeads(Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : []);
+      }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching leads:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const filteredLeads = leads.filter(lead =>
+    lead.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lead.lead_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lead.company?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const paginatedLeads = filteredLeads.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+
+  const handleStatusUpdate = async (leadId: string, newStatus: string) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/crm/leads/', {
+      const response = await fetch(`http://127.0.0.1:8000/api/quotations/leads/${leadId}/update_status/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ status: newStatus }),
       });
-      
+
       if (response.ok) {
-        setShowCreateModal(false);
-        setFormData({ customer_id: '', source: 'MANUAL', stage: 'NEW', assigned_to: '', estimated_value: '' });
-        fetchData();
+        fetchLeads();
       } else {
-        alert('Error creating lead');
+        alert('Error updating lead status');
       }
     } catch (error) {
-      console.error('Error creating lead:', error);
-      alert('Error creating lead');
+      console.error('Error updating lead status:', error);
+      alert('Error updating lead status');
     }
   };
 
-  const handleStageChange = async (lead: Lead, newStage: string) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/crm/leads/${lead.id}/advance-stage/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_stage: newStage }),
-      });
-      
-      if (response.ok) {
-        fetchData();
-      } else {
-        alert('Error updating lead stage');
-      }
-    } catch (error) {
-      console.error('Error updating lead stage:', error);
-      alert('Error updating lead stage');
-    }
-  };
-
-  const openDetailModal = (lead: Lead) => {
-    setSelectedLead(lead);
-    setShowDetailModal(true);
-  };
-
-  const getLeadsByStage = (stage: string) => {
-    return leads.filter(lead => lead.stage === stage);
-  };
-
-  const getStageColor = (stage: string) => {
-    const stageConfig = STAGES.find(s => s.id === stage);
-    return stageConfig?.color || 'gray';
+  const getStatusColor = (status: string) => {
+    const statusConfig = STATUSES.find(s => s.id === status);
+    return statusConfig?.color || 'gray';
   };
 
   const stats = [
-    { label: 'Total Leads', value: leads.length, color: 'blue' },
-    { label: 'Active Pipeline', value: leads.filter(l => !['WON', 'LOST'].includes(l.stage)).length, color: 'green' },
-    { label: 'Won', value: leads.filter(l => l.stage === 'WON').length, color: 'green' },
-    { label: 'Lost', value: leads.filter(l => l.stage === 'LOST').length, color: 'red' },
+    { label: "Today's Leads", value: leads.filter(l => new Date(l.created_at).toDateString() === new Date().toDateString()).length, icon: Users, tint: 'from-blue-600 to-blue-700' },
+    { label: 'Open Leads', value: leads.filter(l => !['won', 'lost'].includes(l.status)).length, icon: Clock, tint: 'from-sky-500 to-blue-600' },
+    { label: 'Pending Quotations', value: leads.filter(l => ['estimating', 'quotation'].includes(l.status)).length, icon: TrendingUp, tint: 'from-blue-400 to-blue-600' },
+    { label: 'Won', value: leads.filter(l => l.status === 'won').length, icon: CheckCircle, tint: 'from-blue-800 to-blue-950' },
+    { label: 'Lost', value: leads.filter(l => l.status === 'lost').length, icon: AlertCircle, tint: 'from-blue-600 to-blue-700' },
   ];
 
+  const conversionRate = leads.length > 0
+    ? Math.round((leads.filter(l => l.status === 'won').length / leads.length) * 100)
+    : 0;
+
   return (
-    <div className="min-h-screen flex" style={{
-      background: 'radial-gradient(circle at 14% 12%, rgba(0, 149, 190, 0.28), transparent 28%), radial-gradient(circle at 86% 18%, rgba(30, 99, 184, 0.22), transparent 30%), linear-gradient(135deg, #eef8ff 0%, #d8ecfb 38%, #f6f9fe 100%)',
-      backgroundAttachment: 'fixed'
-    }}>
-      <Sidebar activePath="/admin/crm/leads" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Leads Pipeline"
-          subtitle="Manage sales pipeline and lead stages"
-          onSearch={(q) => console.log('Search leads:', q)}
-        />
-
-        <div className="p-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            {stats.map((stat, index) => {
-              const colorClasses = {
-                blue: { bg: 'bg-blue-50', valueColor: 'text-blue-700' },
-                green: { bg: 'bg-green-50', valueColor: 'text-green-700' },
-                red: { bg: 'bg-red-50', valueColor: 'text-red-700' },
-              };
-              const colors = colorClasses[stat.color as keyof typeof colorClasses];
-              
-              return (
-                <div key={index} className={`${colors.bg} rounded-xl p-6 border border-gray-200`}>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
-                  <p className={`text-3xl font-bold ${colors.valueColor}`}>{stat.value}</p>
+    <AdminLayout
+      title={serviceFilter === 'water_taps_accessories' ? "Water Taps & Accessories Leads" : "Leads Pipeline"}
+      subtitle={serviceFilter === 'water_taps_accessories' ? "Manage inventory-related leads" : "Manage sales pipeline and lead stages"}
+      activePath="/admin/crm/leads"
+      onSearch={(q) => console.log('Search leads:', q)}
+    >
+      <div className="space-y-4">
+        {/* Service Filter Banner */}
+        {serviceFilter && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Filter className="w-5 h-5 text-blue-600" />
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Kanban Board */}
-          <div className="flex gap-4 mb-6">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              + Create Lead
-            </button>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Pipeline Board</h2>
-              <p className="text-sm text-gray-600">Drag leads between stages to advance pipeline</p>
-            </div>
-            
-            {loading ? (
-              <div className="p-6 text-center text-gray-500">Loading leads...</div>
-            ) : (
-              <div className="p-6 overflow-x-auto">
-                <div className="flex gap-4 min-w-max">
-                  {STAGES.map((stage) => (
-                    <div key={stage.id} className="w-72 flex-shrink-0">
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-gray-900">{stage.label}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${stage.color}-100 text-${stage.color}-700`}>
-                            {getLeadsByStage(stage.id).length}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {getLeadsByStage(stage.id).map((lead) => (
-                          <div
-                            key={lead.id}
-                            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => openDetailModal(lead)}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium text-gray-900">{lead.customer_name}</h4>
-                              <span className={`px-2 py-1 rounded text-xs font-medium bg-${getStageColor(lead.stage)}-100 text-${getStageColor(lead.stage)}-700`}>
-                                {lead.source}
-                              </span>
-                            </div>
-                            {lead.company_name && (
-                              <p className="text-sm text-gray-600 mb-2">{lead.company_name}</p>
-                            )}
-                            {lead.estimated_value && (
-                              <p className="text-sm font-medium text-gray-900 mb-2">
-                                UGX {parseInt(String(lead.estimated_value)).toLocaleString()}
-                              </p>
-                            )}
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{new Date(lead.created_at).toLocaleDateString()}</span>
-                              {lead.assigned_to && (
-                                <span>→ {lead.assigned_to}</span>
-                              )}
-                            </div>
-                            
-                            {/* Stage advancement buttons */}
-                            {stage.id !== 'WON' && stage.id !== 'LOST' && (
-                              <div className="mt-3 pt-3 border-t border-gray-100">
-                                <select
-                                  value={lead.stage}
-                                  onChange={(e) => handleStageChange(lead, e.target.value)}
-                                  className="w-full text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {STAGES.filter(s => s.id !== lead.stage).map(s => (
-                                    <option key={s.id} value={s.id}>Move to {s.label}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        
-                        {getLeadsByStage(stage.id).length === 0 && (
-                          <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg p-4 text-center text-gray-400 text-sm">
-                            No leads
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-blue-900 mb-1">
+                    {serviceFilter === 'water_taps_accessories' ? 'Water Taps & Accessories Service' : 'Filtered by Service'}
+                  </h3>
+                  <p className="text-xs text-blue-700 mb-2">
+                    {serviceFilter === 'water_taps_accessories'
+                      ? 'Showing only leads for water taps and accessories inventory items.'
+                      : `Showing only leads for service: ${serviceFilter}`}
+                  </p>
+                  <div className="flex items-center gap-3 text-xs text-blue-600">
+                    <span className="bg-blue-100 px-2 py-1 rounded">Service: {serviceFilter}</span>
+                    {serviceFilter === 'water_taps_accessories' && (
+                      <span className="bg-blue-100 px-2 py-1 rounded">Scope: Inventory Sales</span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <Link
+                href="/admin/crm/leads"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+              >
+                <X className="w-4 h-4" />
+                Clear Filter
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {stats.map((stat, index) => (
+            <DashboardCard
+              key={index}
+              label={stat.label}
+              value={stat.value.toString()}
+              icon={stat.icon}
+              tint={stat.tint}
+            />
+          ))}
+          <DashboardCard
+            label="Conversion Rate"
+            value={`${conversionRate}%`}
+            icon={TrendingUp}
+            tint="from-blue-400 to-blue-600"
+          />
+        </div>
+
+        {/* Search and Filter */}
+        <div className="rounded-xl border border-blue-100 bg-white shadow-sm p-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search leads, customer or company..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); fetchLeads(); }}
+              className="px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="all">All Statuses</option>
+              {STATUSES.map(status => (
+                <option key={status.id} value={status.id}>{status.label}</option>
+              ))}
+            </select>
+            {serviceFilter === 'water_taps_accessories' && (
+              <Link
+                href="/quotation?service=water_taps_accessories"
+                target="_blank"
+                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+              >
+                New Lead
+              </Link>
             )}
           </div>
         </div>
+
+        {/* Leads Table */}
+        <div className="rounded-xl border border-blue-100 bg-white shadow-sm overflow-hidden">
+          <div className="border-b border-blue-100 px-4 py-2.5 flex items-center justify-between bg-gray-50">
+            <h3 className="font-semibold text-blue-900 text-base">Leads</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages} ({filteredLeads.length} total)
+              </span>
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-6 text-center text-blue-400 text-sm">Loading leads...</div>
+          ) : filteredLeads.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Users className="text-gray-400" size={24} />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">No leads found</h3>
+              <p className="text-sm text-gray-500">
+                {searchQuery ? 'No leads match your search criteria.' : 'No leads available.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-blue-50">
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Lead #</th>
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Customer</th>
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Company</th>
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Service</th>
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Location</th>
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Status</th>
+                    <th className="px-4 py-3 text-left text-blue-700 text-xs">Created</th>
+                    <th className="px-5 py-3 text-left text-blue-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedLeads.map((lead) => (
+                    <tr key={lead.id} className="border-t border-blue-50">
+                      <td className="px-4 py-3 text-blue-900 text-sm">{lead.lead_number}</td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <p className="font-medium text-blue-900 text-sm">{lead.customer_name}</p>
+                          <p className="text-xs text-blue-600">{lead.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-blue-900 text-sm">{lead.company || '-'}</td>
+                      <td className="px-4 py-3 text-blue-900 text-sm">{SERVICE_LABELS[lead.service] || lead.service}</td>
+                      <td className="px-4 py-3 text-blue-900 text-sm">{lead.district || '-'}</td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => handleStatusUpdate(lead.id, e.target.value)}
+                          className="px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer bg-blue-100 text-blue-700"
+                        >
+                          {STATUSES.map(status => (
+                            <option key={status.id} value={status.id}>{status.label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 text-blue-900 text-sm">{new Date(lead.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/crm/leads/${lead.id}`}
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
+    </AdminLayout>
+  );
+}
 
-      {/* Create Lead Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Create Lead</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateLead}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                  <select
-                    value={formData.customer_id}
-                    onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select customer</option>
-                    {customers.map(customer => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.full_name} {customer.company_name ? `(${customer.company_name})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                  <select
-                    value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="MANUAL">Manually Created</option>
-                    <option value="WEBSITE">Website Inquiry</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
-                  <select
-                    value={formData.stage}
-                    onChange={(e) => setFormData({ ...formData, stage: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {STAGES.filter(s => s.id !== 'WON' && s.id !== 'LOST').map(stage => (
-                      <option key={stage.id} value={stage.id}>{stage.label}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
-                  <input
-                    type="text"
-                    value={formData.assigned_to}
-                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    placeholder="Staff member name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Value (UGX)</label>
-                  <input
-                    type="number"
-                    value={formData.estimated_value}
-                    onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
-                    placeholder="e.g., 50000000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Create Lead
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Lead Detail Modal */}
-      {showDetailModal && selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Lead Details</h3>
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Customer</p>
-                  <p className="text-gray-900">{selectedLead.customer_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Company</p>
-                  <p className="text-gray-900">{selectedLead.company_name || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Source</p>
-                  <p className="text-gray-900">{selectedLead.source}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Stage</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${getStageColor(selectedLead.stage)}-100 text-${getStageColor(selectedLead.stage)}-700`}>
-                    {STAGES.find(s => s.id === selectedLead.stage)?.label}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Assigned To</p>
-                  <p className="text-gray-900">{selectedLead.assigned_to || 'Unassigned'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Estimated Value</p>
-                  <p className="text-gray-900">
-                    {selectedLead.estimated_value ? `UGX ${parseInt(String(selectedLead.estimated_value)).toLocaleString()}` : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Created</p>
-                  <p className="text-gray-900">{new Date(selectedLead.created_at).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Closed</p>
-                  <p className="text-gray-900">{selectedLead.closed_at ? new Date(selectedLead.closed_at).toLocaleString() : 'N/A'}</p>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <h4 className="font-semibold text-gray-900 mb-3">Quick Actions</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-sm font-medium">
-                    View Activities
-                  </button>
-                  <button className="px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-sm font-medium">
-                    Schedule Site Visit
-                  </button>
-                  <button className="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 text-sm font-medium">
-                    Create Quotation
-                  </button>
-                  <button className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 text-sm font-medium">
-                    Add Note
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+export default function LeadsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-blue-400">Loading...</div>}>
+      <LeadsPageContent />
+    </Suspense>
   );
 }

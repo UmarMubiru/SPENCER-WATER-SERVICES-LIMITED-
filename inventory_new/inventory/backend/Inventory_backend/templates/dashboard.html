@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="dashboard-gradient mb-4">
+
+<h2>
+
+Inventory Management
+
+</h2>
+
+<p>
+
+Monitor inventory, stock movement, suppliers and project allocations in real time.
+
+</p>
+
+<a href="{% url 'inventory-create' %}" class="gradient-btn">
+
+Add Inventory
+
+</a>
+
+</div>
+
+<div class="row g-4">
+
+<div class="col-lg-3">
+
+<div class="widget">
+
+<div class="widget-icon blue">
+
+<i class="bi bi-box-seam"></i>
+
+</div>
+
+<h5>
+
+Inventory
+
+</h5>
+
+<h2>
+
+{{ total_items }}
+
+</h2>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="widget">
+
+<div class="widget-icon green">
+
+<i class="bi bi-grid"></i>
+
+</div>
+
+<h5>
+
+Categories
+
+</h5>
+
+<h2>
+
+{{ total_categories }}
+
+</h2>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="widget">
+
+<div class="widget-icon orange">
+
+<i class="bi bi-clock-history"></i>
+
+</div>
+
+<h5>
+
+Pending Requests
+
+</h5>
+
+<h2>
+
+{{ pending_requests }}
+
+</h2>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="widget">
+
+<div class="widget-icon red">
+
+<i class="bi bi-exclamation-circle"></i>
+
+</div>
+
+<h5>
+
+Low Stock
+
+</h5>
+
+<h2>
+
+{{ low_stock }}
+
+</h2>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="row mt-4">
+
+<div class="col-lg-8">
+
+<div class="card">
+
+<div class="card-body">
+
+{{ chart_labels|json_script:"chart-labels" }}
+{{ chart_values|json_script:"chart-values" }}
+
+<canvas id="inventoryChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="quick-card">
+
+<div>
+
+<strong>
+
+Add Inventory
+
+</strong>
+
+<br>
+
+<small>
+
+Register new stock
+
+</small>
+
+</div>
+
+<i class="bi bi-plus-circle"></i>
+
+</div>
+
+<div class="quick-card">
+
+<div>
+
+<strong>
+
+Material Requests
+
+</strong>
+
+<br>
+
+<small>
+
+Approve requests
+
+</small>
+
+</div>
+
+<i class="bi bi-clipboard-check"></i>
+
+</div>
+
+<div class="quick-card">
+
+<div>
+
+<strong>
+
+Reports
+
+</strong>
+
+<br>
+
+<small>
+
+Inventory analytics
+
+</small>
+
+</div>
+
+<i class="bi bi-bar-chart"></i>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="row mt-4">
+
+<div class="col-lg-7">
+
+<div class="card">
+
+<div class="card-header bg-white">
+
+Recent Activities
+
+</div>
+
+<div class="card-body">
+
+{% for movement in recent_movements %}
+
+<div class="activity-item">
+
+<div class="activity-icon">
+
+<i class="bi bi-box-arrow-in-down"></i>
+
+</div>
+
+<div>
+
+<strong>
+
+{{ movement.inventory_item }}
+
+</strong>
+
+<br>
+
+<small>
+
+{{ movement.movement_type }}
+
+•
+
+{{ movement.created_at }}
+
+</small>
+
+</div>
+
+</div>
+
+{% empty %}
+
+<p>
+
+No activity recorded.
+
+</p>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-5">
+
+<div class="card">
+
+<div class="card-header bg-white">
+
+Inventory Health
+
+</div>
+
+<div class="card-body">
+
+{% for item in low_stock_items %}
+
+<div class="mb-4">
+
+<strong>
+
+{{ item.name }}
+
+</strong>
+
+<div class="stock-progress">
+
+<div style="width:{{ item.quantity }}%;"></div>
+
+</div>
+
+<small>
+
+{{ item.quantity }} remaining
+
+</small>
+
+</div>
+
+{% empty %}
+
+<div class="alert alert-success">
+
+Inventory levels are healthy.
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+const labels=JSON.parse(document.getElementById("chart-labels").textContent);
+
+const values=JSON.parse(document.getElementById("chart-values").textContent);
+
+new Chart(document.getElementById("inventoryChart"),{
+
+type:"bar",
+
+data:{
+
+labels:labels,
+
+datasets:[{
+
+label:"Inventory",
+
+data:values,
+
+borderRadius:10
+
+}]
+
+},
+
+options:{
+
+plugins:{
+
+legend:{
+
+display:false
+
+}
+
+},
+
+scales:{
+
+y:{
+
+beginAtZero:true
+
+}
+
+}
+
+}
+
+});
+
+</script>
+
+{% endblock %}

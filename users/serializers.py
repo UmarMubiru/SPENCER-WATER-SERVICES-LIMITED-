@@ -10,18 +10,46 @@ class UserProfileSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name')
     is_active = serializers.BooleanField(source='user.is_active')
     role_name = serializers.CharField(source='role.name', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
     full_name = serializers.SerializerMethodField()
     role_permissions = serializers.SerializerMethodField()
+    module_permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'phone', 'role', 'role_name', 'role_permissions', 'is_active', 'created_at', 'updated_at']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'phone', 'role', 'role_name', 'department', 'department_name', 'job_title', 'role_permissions', 'module_permissions', 'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_role_permissions(self, obj):
         return list(obj.permissions.values_list('code', flat=True)) or (
             list(obj.role.permissions.values_list('code', flat=True)) if obj.role else []
         )
+
+    def get_module_permissions(self, obj):
+        if obj.department:
+            # Get job title-specific permissions first
+            job_title_perms = {}
+            if obj.job_title:
+                job_title_perms = {
+                    perm.module: perm.permission 
+                    for perm in ModulePermission.objects.filter(
+                        role=obj.department.name, 
+                        job_title=obj.job_title
+                    )
+                }
+            
+            # Get department-level permissions
+            dept_perms = {
+                perm.module: perm.permission 
+                for perm in ModulePermission.objects.filter(
+                    role=obj.department.name, 
+                    job_title__isnull=True
+                )
+            }
+            
+            # Job title overrides take precedence
+            return {**dept_perms, **job_title_perms}
+        return {}
 
     def get_full_name(self, obj):
         return obj.user.get_full_name() or obj.user.username

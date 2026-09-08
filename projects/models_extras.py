@@ -1,5 +1,15 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
 import uuid
+
+
+def activity_image_upload_to(instance, filename):
+    """Upload activity images to a folder named after the project"""
+    if instance.activity and instance.activity.project:
+        project_name = instance.activity.project.name.replace(' ', '_').lower()
+        return f'project_images/{project_name}/{filename}'
+    return f'project_images/general/{filename}'
 
 
 class ProjectMilestone(models.Model):
@@ -83,6 +93,20 @@ class ProjectHistory(models.Model):
         ("cost_recorded", "Cost Recorded"),
         ("document_added", "Document Added"),
         ("completed", "Completed"),
+        ("resource_allocated", "Resource Allocated"),
+        ("resource_requested", "Resource Requested"),
+        ("resource_approved", "Resource Approved"),
+        ("resource_rejected", "Resource Rejected"),
+        ("resource_issued", "Resource Issued"),
+        ("resource_returned", "Resource Returned"),
+        ("resource_damaged", "Resource Damaged"),
+        ("resource_lost", "Resource Lost"),
+        ("fund_allocated", "Fund Allocated"),
+        ("fund_requested", "Fund Requested"),
+        ("fund_approved", "Fund Approved"),
+        ("fund_rejected", "Fund Rejected"),
+        ("fund_utilised", "Fund Utilised"),
+        ("project_extended", "Project Extended"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -91,3 +115,275 @@ class ProjectHistory(models.Model):
     description = models.TextField()
     actor = models.ForeignKey("users.UserProfile", on_delete=models.SET_NULL, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+
+class ProjectFieldHistory(models.Model):
+    """Track field-level changes to projects for audit trail"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="field_history")
+    field_name = models.CharField(max_length=100)
+    old_value = models.TextField(blank=True, null=True)
+    new_value = models.TextField(blank=True, null=True)
+    changed_by = models.ForeignKey("users.UserProfile", on_delete=models.SET_NULL, null=True, related_name="field_changes")
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name = "Project Field History"
+        verbose_name_plural = "Project Field Histories"
+
+    def __str__(self):
+        return f"{self.project.name} - {self.field_name} changed by {self.changed_by}"
+
+
+class ProjectActivity(models.Model):
+    """Track execution activities for a project"""
+    STATUS_CHOICES = [
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+        ("on_hold", "On Hold"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="activities")
+    activity_name = models.CharField(max_length=255, default="New Activity")
+    order = models.PositiveIntegerField(default=0)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    progress = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="in_progress")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Project Activity"
+        verbose_name_plural = "Project Activities"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.end_date and self.start_date and self.end_date < self.start_date:
+            raise ValidationError({"end_date": "End date must be after or equal to start date."})
+
+    def __str__(self):
+        return f"{self.project.name} - {self.order}. {self.activity_name}"
+
+
+class ActivityResource(models.Model):
+    """Track resources allocated to project activities"""
+    RESOURCE_TYPE_CHOICES = [
+        ("company_tool", "Company Tool"),
+        ("hired_tool", "Hired Tool"),
+        ("money", "Money"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    activity = models.ForeignKey(ProjectActivity, on_delete=models.CASCADE, related_name="resources")
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
+    inventory_item = models.ForeignKey("inventory.InventoryItem", on_delete=models.SET_NULL, null=True, blank=True)
+    project_allocation = models.ForeignKey("projects.ProjectResourceAllocation", on_delete=models.SET_NULL, null=True, blank=True, related_name="activity_draws")
+    quantity = models.PositiveIntegerField(null=True, blank=True)
+    hired_tool_name = models.CharField(max_length=255, blank=True)
+    hired_from = models.CharField(max_length=255, blank=True)
+    hired_tool_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    money_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    money_purpose = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Activity Resource"
+        verbose_name_plural = "Activity Resources"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.resource_type == "company_tool":
+            if not self.inventory_item:
+                raise ValidationError({"inventory_item": "Inventory item is required for company_tool type."})
+            if not self.quantity:
+                raise ValidationError({"quantity": "Quantity is required for company_tool type."})
+            if not self.project_allocation:
+                raise ValidationError({"project_allocation": "Project allocation is required for company_tool type."})
+            # Validate inventory_item matches project_allocation.tool_name
+            if self.project_allocation and self.inventory_item:
+                if self.inventory_item.name != self.project_allocation.tool_name:
+                    raise ValidationError({"inventory_item": "Inventory item must match the tool name in the project allocation."})
+            # Validate quantity doesn't exceed remaining
+            if self.project_allocation and self.quantity:
+                remaining = self.project_allocation.remaining_quantity
+                if remaining is not None and self.quantity > remaining:
+                    raise ValidationError({"quantity": f"Cannot draw {self.quantity}. Only {remaining} remaining in allocation."})
+            if self.hired_tool_name or self.hired_from or self.hired_tool_cost or self.money_amount or self.money_purpose:
+                raise ValidationError("Only inventory_item, project_allocation, and quantity should be set for company_tool type.")
+
+        elif self.resource_type == "hired_tool":
+            if not self.hired_tool_name:
+                raise ValidationError({"hired_tool_name": "Hired tool name is required for hired_tool type."})
+            if not self.quantity:
+                raise ValidationError({"quantity": "Quantity is required for hired_tool type."})
+            if not self.hired_from:
+                raise ValidationError({"hired_from": "Hired from is required for hired_tool type."})
+            if not self.hired_tool_cost:
+                raise ValidationError({"hired_tool_cost": "Hired tool cost is required for hired_tool type."})
+            if self.inventory_item or self.project_allocation or self.money_amount or self.money_purpose:
+                raise ValidationError("Only hired_tool_name, hired_from, quantity, and hired_tool_cost should be set for hired_tool type.")
+
+        elif self.resource_type == "money":
+            if not self.money_amount:
+                raise ValidationError({"money_amount": "Money amount is required for money type."})
+            if not self.project_allocation:
+                raise ValidationError({"project_allocation": "Project allocation is required for money type."})
+            # Validate amount doesn't exceed remaining
+            if self.project_allocation and self.money_amount:
+                remaining = self.project_allocation.remaining_amount
+                if remaining is not None and self.money_amount > remaining:
+                    raise ValidationError({"money_amount": f"Cannot draw {self.money_amount}. Only {remaining} remaining in allocation."})
+            if self.inventory_item or self.quantity or self.hired_tool_name or self.hired_from or self.hired_tool_cost:
+                raise ValidationError("Only project_allocation, money_amount, and money_purpose should be set for money type.")
+
+    def __str__(self):
+        if self.resource_type == "company_tool":
+            return f"{self.inventory_item.name if self.inventory_item else 'Unknown'} x{self.quantity}"
+        elif self.resource_type == "hired_tool":
+            return f"{self.hired_tool_name} x{self.quantity} — hired from {self.hired_from}, UGX {self.hired_tool_cost}"
+        elif self.resource_type == "money":
+            return f"UGX {self.money_amount} - {self.money_purpose}"
+        return f"Resource ({self.resource_type})"
+
+
+class ActivityImage(models.Model):
+    """Gallery images for project activities"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    activity = models.ForeignKey(ProjectActivity, on_delete=models.CASCADE, related_name="images", null=True, blank=True)
+    image = models.ImageField(upload_to=activity_image_upload_to, null=True, blank=True)
+    image_url = models.URLField(max_length=500, blank=True, null=True)
+    caption = models.CharField(max_length=255, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Activity Image"
+        verbose_name_plural = "Activity Images"
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        if self.activity:
+            return f"{self.activity.activity_name} - {self.caption or 'Image'}"
+        return f"{self.caption or 'Image'}"
+
+
+class ProjectResourceAllocation(models.Model):
+    """Resource allocations committed to a project at creation time (snapshot model)"""
+    RESOURCE_TYPE_CHOICES = [
+        ("company_tool", "Company Tool"),
+        ("money", "Money"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="resource_allocations")
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
+    tool_name = models.CharField(max_length=255, null=True, blank=True)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    allocated_quantity = models.PositiveIntegerField(null=True, blank=True)
+    money_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    money_purpose = models.CharField(max_length=255, blank=True)
+    allocated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    allocated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Project Resource Allocation"
+        verbose_name_plural = "Project Resource Allocations"
+        ordering = ['resource_type', 'tool_name']
+
+    @property
+    def remaining_quantity(self):
+        """Calculate remaining quantity for company tools"""
+        if self.resource_type != 'company_tool' or self.allocated_quantity is None:
+            return None
+        # Sum all drawn quantities from activity resources linked to this allocation
+        drawn = ActivityResource.objects.filter(
+            project_allocation=self,
+            resource_type='company_tool'
+        ).aggregate(total_drawn=models.Sum('quantity'))['total_drawn'] or 0
+        return self.allocated_quantity - drawn
+
+    @property
+    def remaining_amount(self):
+        """Calculate remaining amount for money"""
+        if self.resource_type != 'money' or self.money_amount is None:
+            return None
+        # Money may be consumed either by an activity draw or by a posted fund
+        # transaction.  Only posted transactions are actual expenditure; drafts
+        # and approvals must not reduce the available balance.
+        activity_draws = ActivityResource.objects.filter(
+            project_allocation=self,
+            resource_type='money'
+        ).aggregate(total_drawn=models.Sum('money_amount'))['total_drawn'] or 0
+        posted_transactions = self.fund_transactions.filter(
+            status=ProjectFundTransaction.Status.POSTED
+        ).aggregate(total=models.Sum('amount'))['total'] or 0
+        return self.money_amount - activity_draws - posted_transactions
+
+    def __str__(self):
+        if self.resource_type == 'company_tool':
+            return f"{self.project.name} - {self.tool_name} (Allocated: {self.allocated_quantity})"
+        elif self.resource_type == 'money':
+            return f"{self.project.name} - {self.money_purpose or 'Money'} (Allocated: {self.money_amount})"
+        return f"{self.project.name} - {self.resource_type}"
+
+
+class ProjectFundTransaction(models.Model):
+    """Detailed fund transactions for project money accountability"""
+    class ExpenseType(models.TextChoices):
+        TOOL_HIRE = "TOOL_HIRE", "Tool Hire"
+        TRANSPORT = "TRANSPORT", "Transport"
+        FUEL = "FUEL", "Fuel"
+        ACCOMMODATION = "ACCOMMODATION", "Accommodation"
+        MATERIALS = "MATERIALS", "Materials"
+        LABOUR = "LABOUR", "Labour"
+        EQUIPMENT = "EQUIPMENT", "Equipment"
+        OTHER = "OTHER", "Other"
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+        POSTED = "POSTED", "Posted"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="fund_transactions")
+    activity = models.ForeignKey(ProjectActivity, on_delete=models.SET_NULL, null=True, blank=True, related_name="fund_transactions")
+    resource_allocation = models.ForeignKey(ProjectResourceAllocation, on_delete=models.SET_NULL, null=True, blank=True, related_name="fund_transactions")
+    expense_type = models.CharField(max_length=20, choices=ExpenseType.choices)
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    spent_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="fund_transactions_spent")
+    transaction_date = models.DateField()
+    supplier_or_payee = models.CharField(max_length=255, blank=True)
+    reference_number = models.CharField(max_length=100, blank=True)
+    receipt_or_document = models.FileField(upload_to='fund_receipts/', null=True, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Project Fund Transaction"
+        verbose_name_plural = "Project Fund Transactions"
+        ordering = ["-transaction_date", "-created_at"]
+
+    def save(self, *args, **kwargs):
+        # Auto-generate reference number if not provided
+        if not self.reference_number:
+            # Format: TXN-YYYYMMDD-RANDOM
+            import random
+            import string
+            date_str = self.transaction_date.strftime('%Y%m%d') if self.transaction_date else ''
+            random_str = ''.join(random.choices(string.digits, k=6))
+            self.reference_number = f"TXN-{date_str}-{random_str}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.project.name} - {self.expense_type}: {self.amount} ({self.status})"

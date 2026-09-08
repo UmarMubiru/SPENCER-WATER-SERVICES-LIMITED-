@@ -15,11 +15,25 @@ export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
 
   const getStatusConfig = (value: string) => {
     const s = value.toLowerCase();
-    if (s === 'active' || s === 'administrator') {
+    if (s === 'active') {
       return {
         bg: 'bg-green-100',
         text: 'text-green-700',
         border: 'border-green-200',
+      };
+    }
+    if (s === 'assigned') {
+      return {
+        bg: 'bg-blue-100',
+        text: 'text-blue-700',
+        border: 'border-blue-200',
+      };
+    }
+    if (s === 'not_active') {
+      return {
+        bg: 'bg-red-100',
+        text: 'text-red-700',
+        border: 'border-red-200',
       };
     }
     if (s === 'inactive' || s === 'exited' || s === 'suspended') {

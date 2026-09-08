@@ -1,4 +1,4 @@
-import { ShieldCheck, TrendingUp, Users } from "lucide-react";
+import { ShieldCheck, TrendingUp, Users, Droplets, Zap } from "lucide-react";
 
 const FEATURES = [
   {
@@ -16,11 +16,21 @@ const FEATURES = [
     title: "Team Collaboration",
     desc: "Work together efficiently across all departments",
   },
+  {
+    icon: Droplets,
+    title: "Water Management",
+    desc: "Comprehensive water project oversight",
+  },
+  {
+    icon: Zap,
+    title: "Smart Operations",
+    desc: "Streamlined workflow automation",
+  },
 ];
 
 export default function BrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-14">
+    <div className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-16">
       {/* Background photo */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -30,65 +40,69 @@ export default function BrandPanel() {
         }}
       />
 
-      {/* Blue gradient + glass overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0B1E4D]/95 via-[#123B8C]/85 to-[#1E5FD9]/70" />
-      <div className="absolute inset-0 backdrop-blur-[1px]" />
+      {/* Enhanced blue gradient + glass overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0b2e5c]/90 via-[#1e63b8]/80 to-[#0066ff]/75" />
+      <div className="absolute inset-0 backdrop-blur-sm" />
 
-      {/* Floating bubbles */}
+      {/* Floating bubbles - enhanced */}
       <div className="pointer-events-none absolute inset-0">
-        <span className="absolute left-[70%] top-[45%] h-3 w-3 rounded-full bg-white/40 blur-[1px]" />
-        <span className="absolute left-[85%] top-[58%] h-2 w-2 rounded-full bg-white/30 blur-[1px]" />
-        <span className="absolute left-[60%] top-[68%] h-4 w-4 rounded-full bg-white/25 blur-[1px]" />
+        <span className="absolute left-[15%] top-[20%] h-4 w-4 rounded-full bg-white/30 blur-[2px] animate-pulse" />
+        <span className="absolute left-[75%] top-[35%] h-3 w-3 rounded-full bg-white/25 blur-[1px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <span className="absolute left-[85%] top-[55%] h-2 w-2 rounded-full bg-white/35 blur-[1px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <span className="absolute left-[25%] top-[65%] h-5 w-5 rounded-full bg-white/20 blur-[2px] animate-pulse" style={{ animationDelay: '1.5s' }} />
+        <span className="absolute left-[60%] top-[80%] h-3 w-3 rounded-full bg-white/30 blur-[1px] animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex items-center gap-4">
-        <div className="h-32 w-32 bg-white border-2 border-white rounded-lg flex items-center justify-center">
+      <div className="relative z-10 flex items-center gap-6">
+        <div className="h-40 w-40 bg-white/10 backdrop-blur-md border-2 border-white/40 rounded-2xl flex items-center justify-center shadow-2xl">
           <img
             src="/sws-logo-current.png"
             alt="SWS Logo"
-            className="h-28 w-28 object-contain"
+            className="h-36 w-36 object-contain"
           />
         </div>
         <div>
-          <h1 className="text-3xl font-extrabold leading-tight text-white">SWS</h1>
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">
-            Spencer Water
-            <br />
-            Services Ltd
+          <h1 className="text-4xl font-extrabold leading-tight text-white tracking-tight">SWS</h1>
+          <p className="text-base font-bold uppercase tracking-widest text-blue-100/90 mt-1">
+            Spencer Water Services Ltd
           </p>
         </div>
       </div>
 
-      <div className="relative z-10 mt-10">
-        <div className="mb-6 h-1 w-14 rounded-full bg-blue-300" />
-        <h2 className="mb-4 text-4xl font-bold leading-tight text-white">
+      <div className="relative z-10 mt-16">
+        <div className="mb-8 h-1.5 w-20 rounded-full bg-gradient-to-r from-blue-300 via-blue-200 to-white shadow-lg" />
+        <h2 className="mb-6 text-5xl font-bold leading-tight text-white">
           Smart Water Solutions
           <br />
-          for a Sustainable Future
+          <span className="text-blue-200">for a Sustainable Future</span>
         </h2>
-        <p className="max-w-md text-blue-100">
-          Managing water projects, operations and resources efficiently for
-          communities that rely on us.
+        <p className="max-w-lg text-blue-100/80 text-lg leading-relaxed">
+          Managing water projects, operations and resources efficiently for communities that rely on us. Experience the future of water management today.
         </p>
 
-        <div className="mt-10 space-y-5">
+        <div className="mt-12 space-y-6">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-                <Icon className="h-5 w-5 text-blue-100" />
+            <div key={title} className="flex items-start gap-5 group">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/30 shadow-lg group-hover:bg-white/25 transition-all duration-300">
+                <Icon className="h-6 w-6 text-blue-100" />
               </div>
               <div>
-                <p className="font-semibold text-white">{title}</p>
-                <p className="text-sm text-blue-100/90">{desc}</p>
+                <p className="font-semibold text-white text-lg">{title}</p>
+                <p className="text-sm text-blue-100/80 leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Bottom spacer keeps layout balanced */}
-      <div className="relative z-10" />
+      {/* Bottom section */}
+      <div className="relative z-10 mt-auto">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+          <p className="text-white/90 text-sm font-medium mb-2">🌊 Leading Water Solutions Provider</p>
+          <p className="text-blue-100/70 text-xs">Serving communities across Uganda with excellence</p>
+        </div>
+      </div>
     </div>
   );
 }

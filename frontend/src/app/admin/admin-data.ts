@@ -129,14 +129,11 @@ export const modules: ModuleDefinition[] = [
     basePath: "/admin/employees",
     icon: "user",
     screens: [
-      screen("Dashboard", "dashboard", "dashboard", "Employee overview and statistics"),
-      screen("Directory", "directory", "table", "Employee listing and search"),
-      screen("Register", "register", "form", "Add new employee"),
-      screen("Profile", "profile", "workflow", "Employee details and history"),
-      screen("Contracts", "contracts", "table", "Contract management"),
-      screen("Documents", "documents", "table", "Employee documents"),
-      screen("Assignments", "assignments", "table", "Project assignments"),
-      screen("Settings", "settings", "settings", "Departments and job titles"),
+      screen("Permanent Employees", "permanent", "table", "Permanent staff with long-term contracts and departments"),
+      screen("Casual Employees", "casual", "table", "Temporary staff for project-based work"),
+      screen("Add Employee", "create", "form", "Add new employee (select type first)"),
+      screen("Departments", "departments", "table", "Department management"),
+      screen("Job Titles", "job-titles", "table", "Job title management"),
     ],
   },
   {
@@ -187,14 +184,13 @@ export const quickAdd = [
   { label: "New Tender", path: "/admin/tenders/dashboard" },
   { label: "New Blog", path: "/admin/content/dashboard" },
   { label: "New Project", path: "/admin/projects/dashboard" },
-  { label: "New Employee", path: "/admin/employees/dashboard" },
+  { label: "New Employee", path: "/admin/employees/create" },
   { label: "Invite User", path: "/admin/users/dashboard" },
 ];
 
 export const operations = [
-  ["36", "Employee Management", "4 contracts expiring", "blue", "/admin/employees/dashboard"],
-  ["76", "Customer Management", "12 with open work", "green", "/admin/crm/dashboard"],
-  ["42", "Lead & Quotation Management", "8 need follow-up", "amber", "/admin/quotations/dashboard"],
+  ["36", "Employee Management", "4 contracts expiring", "blue", "/admin/employees"],
+  ["76", "Customer Relations Management", "Customers, leads and quotations", "green", "/admin/crm"],
   ["18", "Tender Management", "6 in confirmation", "blue", "/admin/tenders/dashboard"],
   ["9", "Project Management", "3 nearing completion", "green", "/admin/projects/dashboard"],
   ["7", "Inventory Management", "3 high priority alerts", "red", "/admin/inventory/dashboard"],

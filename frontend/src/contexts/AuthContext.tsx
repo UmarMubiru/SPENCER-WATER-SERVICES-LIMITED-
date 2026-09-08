@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 interface User {
   id: number;
@@ -8,19 +8,26 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
+  full_name?: string;
   profile_picture?: string;
   role?: string | null;
   role_id?: number | null;
+  job_title?: string | null;
+  department?: string | null;
+  department_id?: number | null;
   permissions?: string[];
+  module_permissions?: Record<string, 'view' | 'edit' | 'full'>;
   landing?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   signup: (formData: FormData) => Promise<void>;
   logout: () => void;
+  updateUser: (changes: Partial<User>) => void;
+  refreshUserData: () => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
 }
@@ -47,14 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/auth/token/', {
+      const response = await fetch('http://127.0.0.1:8000/api/users/auth/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!response.ok) {
@@ -63,26 +70,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      const accessToken = data.access;
-      
-      // Decode JWT to get permissions
-      const tokenData = JSON.parse(atob(accessToken.split('.')[1]));
-      
+      const accessToken = data.token;
+
+      // Use the user data from the login response
       const userData: User = {
         id: data.user.id,
-        username: data.user.username,
+        username: data.user.email, // Use email as username since that's what's returned
         email: data.user.email,
         first_name: data.user.first_name,
         last_name: data.user.last_name,
+        full_name: data.user.full_name,
         role: data.user.role,
         role_id: data.user.role_id,
-        permissions: data.user.permissions,
-        landing: data.user.landing,
+        job_title: data.user.job_title,
+        department: data.user.department,
+        department_id: data.user.department_id,
+        permissions: [], // Will be filled from token data
+        module_permissions: data.user.module_permissions,
+        landing: '/dashboard',
       };
-      
+
+      console.log('Login response data:', data);
+      console.log('Parsed user data:', userData);
+
+      // Decode JWT to get legacy permissions
+      const tokenData = JSON.parse(atob(accessToken.split('.')[1]));
+      userData.permissions = tokenData.permissions || [];
+      userData.landing = tokenData.landing || '/dashboard';
+
       setToken(accessToken);
       setUser(userData);
-      
+
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
@@ -123,12 +141,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = (changes: Partial<User>) => {
+    setUser((current) => {
+      if (!current) return current;
+      const updated = { ...current, ...changes };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const refreshUserData = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/users/me/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+
+      const profile = await response.json();
+      setUser((current) => {
+        if (!current) return current;
+        const updated = {
+          ...current,
+          first_name: profile.first_name ?? current.first_name,
+          last_name: profile.last_name ?? current.last_name,
+          full_name: profile.full_name ?? current.full_name,
+          email: profile.email ?? current.email,
+          department: profile.department ?? profile.department_name ?? current.department,
+          department_id: profile.department_id ?? current.department_id,
+          job_title: profile.job_title ?? current.job_title,
+          module_permissions: profile.module_permissions ?? current.module_permissions,
+        };
+        localStorage.setItem('user', JSON.stringify(updated));
+        return updated;
+      });
+    } catch (error) {
+      console.debug('Failed to refresh signed-in user data:', error);
+    }
+  }, [token]);
+
   const value = {
     user,
     token,
     login,
     signup,
     logout,
+    updateUser,
+    refreshUserData,
     loading,
     isAuthenticated: !!token,
   };

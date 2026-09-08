@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sidebar } from '../../components/Sidebar';
-import { Topbar } from '../../components/Topbar';
+import { AdminLayout } from '../../components/AdminLayout';
 
 export default function LeadsDashboardPage() {
   const leads = [
@@ -20,19 +19,12 @@ export default function LeadsDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen flex" style={{
-      background: 'radial-gradient(circle at 14% 12%, rgba(0, 149, 190, 0.28), transparent 28%), radial-gradient(circle at 86% 18%, rgba(30, 99, 184, 0.22), transparent 30%), linear-gradient(135deg, #eef8ff 0%, #d8ecfb 38%, #f6f9fe 100%)',
-      backgroundAttachment: 'fixed'
-    }}>
-      <Sidebar activePath="/admin/leads/dashboard" />
-      <div className="flex-1 ml-64">
-        <Topbar
-          title="Leads Management"
-          subtitle="Track and manage sales leads and opportunities"
-          onSearch={(q) => console.log('Search leads:', q)}
-        />
-
-        <div className="p-6">
+    <AdminLayout
+      title="Leads Management"
+      subtitle="Track and manage sales leads and opportunities"
+      activePath="/admin/leads/dashboard"
+    >
+      <div className="p-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {stats.map((stat, index) => {
@@ -103,8 +95,7 @@ export default function LeadsDashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
